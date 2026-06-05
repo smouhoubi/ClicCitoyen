@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comparateur de villes — ClicCitoyen</title>
+<meta name="description" content="Comparez les indicateurs financiers MAMH de deux municipalités québécoises côte à côte.">
+<meta property="og:title" content="Comparateur de villes — ClicCitoyen">
+<meta property="og:description" content="Analyse côte à côte de 8 indicateurs MAMH entre deux municipalités du Québec.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Source+Sans+3:wght@300;400;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+:root{--bleu:#0a1f44;--bleu-vif:#1d4ed8;--bleu-clair:#dbeafe;--vert:#059669;--orange:#d97706;--rouge:#c0392b;--creme:#f5f0e8;--beige:#e8e1d4;--texte:#1a1a2e;--gris:#6b7280;--blanc:#ffffff;--ombre:0 4px 24px rgba(10,31,68,.12);--radius:12px}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Sans 3',sans-serif;background:var(--creme);color:var(--texte)}
+nav{position:sticky;top:0;z-index:100;background:var(--bleu);display:flex;align-items:center;justify-content:space-between;padding:0 2rem;height:60px;box-shadow:0 2px 16px rgba(0,0,0,.25)}
+.nav-logo{font-family:'Libre Baskerville',serif;font-size:1.1rem;color:white;text-decoration:none}
+.nav-logo span{color:#60a5fa}
+.nav-links{display:flex;gap:1.5rem;list-style:none}
+.nav-links a{color:rgba(255,255,255,.8);text-decoration:none;font-size:.88rem;font-weight:600;transition:color .2s}
+.nav-links a:hover,.nav-links a.active{color:#60a5fa}
+.page-header{background:var(--bleu);padding:2.5rem 2rem;color:white}
+.page-header-inner{max-width:1180px;margin:0 auto}
+.page-header h1{font-family:'Libre Baskerville',serif;font-size:2rem;margin-bottom:.5rem}
+.page-header p{color:rgba(255,255,255,.7)}
+.main{max-width:1180px;margin:0 auto;padding:2rem}
+/* Sélecteurs */
+.selectors{display:grid;grid-template-columns:1fr auto 1fr;gap:1.5rem;align-items:end;margin-bottom:1.5rem}
+@media(max-width:640px){.selectors{grid-template-columns:1fr}}
+.vs-divider{text-align:center;font-family:'Libre Baskerville',serif;font-size:1.5rem;color:var(--gris);align-self:center;padding-top:1.5rem}
+.sel-group label{display:block;font-size:.82rem;font-weight:700;color:var(--bleu);margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.05em}
+.city-wrap{position:relative}
+.city-input{width:100%;padding:.9rem 1.1rem;border:2px solid var(--beige);border-radius:var(--radius);font-size:1rem;font-family:inherit;outline:none;transition:border-color .2s;background:white}
+.city-input:focus{border-color:var(--bleu-vif)}
+.city-dd{position:absolute;top:calc(100% + 4px);left:0;right:0;background:white;border-radius:var(--radius);box-shadow:var(--ombre);z-index:50;max-height:240px;overflow-y:auto;display:none}
+.city-dd.show{display:block}
+.city-opt{padding:.75rem 1rem;cursor:pointer;border-bottom:1px solid var(--beige);display:flex;justify-content:space-between;align-items:center;transition:background .15s}
+.city-opt:last-child{border:none}
+.city-opt:hover{background:var(--creme)}
+.city-opt-nom{font-weight:700;font-size:.93rem}
+.city-opt-region{font-size:.77rem;color:var(--gris)}
+.city-opt-pop{font-family:'DM Mono',monospace;font-size:.78rem;color:var(--bleu-vif)}
+.btn-comparer{width:100%;padding:1rem;background:var(--bleu-vif);color:white;border:none;border-radius:var(--radius);font-size:1rem;font-weight:700;cursor:pointer;transition:background .2s,transform .2s;font-family:inherit}
+.btn-comparer:hover:not(:disabled){background:#1e40af;transform:translateY(-1px)}
+.btn-comparer:disabled{background:var(--gris);cursor:not-allowed}
+/* Résultats */
+.results{display:none;margin-top:2rem}
+.results.show{display:block}
+.comp-headers{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem}
+@media(max-width:560px){.comp-headers{grid-template-columns:1fr}}
+.comp-head{border-radius:var(--radius);padding:1.5rem;color:white;text-align:center}
+.comp-head.h1{background:linear-gradient(135deg,#1d4ed8,#1e3a8a)}
+.comp-head.h2{background:linear-gradient(135deg,#7c3aed,#5b21b6)}
+.comp-head-nom{font-family:'Libre Baskerville',serif;font-size:1.35rem;margin-bottom:.3rem}
+.comp-head-sub{opacity:.75;font-size:.88rem}
+.card{background:white;border-radius:var(--radius);padding:1.75rem;box-shadow:var(--ombre);border:1px solid var(--beige);margin-bottom:1.5rem}
+.card-title{font-family:'Libre Baskerville',serif;font-size:1.05rem;color:var(--bleu);margin-bottom:1.25rem}
+.chart-container{height:300px;position:relative}
+.comp-table{width:100%;border-collapse:collapse;font-size:.9rem}
+.comp-table th{padding:.85rem 1rem;background:var(--bleu);color:white;text-align:left;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.comp-table td{padding:.85rem 1rem;border-bottom:1px solid var(--beige)}
+.comp-table tr:last-child td{border:none}
+.comp-table tr:hover td{background:var(--creme)}
+.td-label{color:var(--gris);font-size:.88rem}
+.td-val{font-family:'DM Mono',monospace;font-size:.97rem}
+.winner{color:var(--vert);font-weight:700}
+.win-badge{background:#d1fae5;color:#065f46;font-size:.68rem;font-weight:800;padding:.1rem .35rem;border-radius:3px;margin-left:.35rem}
+.verdict{background:linear-gradient(135deg,var(--bleu),#1e3a8a);color:white;border-radius:var(--radius);padding:2rem;text-align:center;margin-bottom:1.5rem}
+.verdict-icon{font-size:1.5rem;margin-bottom:.5rem}
+.verdict-titre{font-family:'Libre Baskerville',serif;font-size:1.1rem;margin-bottom:.4rem}
+.verdict-score{font-size:.85rem;opacity:.7}
+.verdict-note{font-size:.75rem;opacity:.5;margin-top:.5rem}
+.spinner{width:24px;height:24px;border-radius:50%;border:3px solid rgba(255,255,255,.3);border-top-color:white;animation:spin .8s linear infinite;display:inline-block;vertical-align:middle;margin-right:.5rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+.nav-hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:.4rem;background:none;border:none;margin-left:.5rem}
+.nav-hamburger span{display:block;width:22px;height:2px;background:white;border-radius:2px;transition:transform .3s,opacity .3s}
+.nav-hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.nav-hamburger.open span:nth-child(2){opacity:0}
+.nav-hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+@media(max-width:640px){
+  nav{padding:0 1rem;flex-wrap:wrap;height:auto;min-height:60px}
+  .nav-hamburger{display:flex}
+  .nav-links{display:none;width:100%;flex-direction:column;gap:0;padding-bottom:.75rem}
+  .nav-links.open{display:flex}
+  .nav-links li{border-top:1px solid rgba(255,255,255,.1)}
+  .nav-links a{display:block;padding:.75rem .5rem;font-size:.9rem}
+}
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-logo">🏙️ Clic<span>Citoyen</span></a>
+  <ul class="nav-links" id="navLinks">>
+    <li><a href="explorateur.html">Explorer</a></li>
+    <li><a href="municipalites.html">Municipalités</a></li>
+    <li><a href="comparateur.html" class="active">Comparer</a></li>
+    <li><a href="a-propos.html">À propos</a></li>
+    <button class="nav-hamburger" aria-label="Menu" onclick="document.getElementById("navLinks").classList.toggle("open");this.classList.toggle("open")"><span></span><span></span><span></span></button>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <h1>Comparateur de villes</h1>
+    <p>Analyse côte à côte de 8 indicateurs MAMH entre deux municipalités</p>
+  </div>
+</div>
+
+<div class="main">
+  <div class="selectors">
+    <div class="sel-group">
+      <label>Première ville</label>
+      <div class="city-wrap">
+        <input type="text" class="city-input" id="c1"
+               placeholder="Ex: Brossard" autocomplete="off" oninput="filterCities(1)">
+        <div class="city-dd" id="dd1"></div>
+      </div>
+    </div>
+    <div class="vs-divider">VS</div>
+    <div class="sel-group">
+      <label>Deuxième ville</label>
+      <div class="city-wrap">
+        <input type="text" class="city-input" id="c2"
+               placeholder="Ex: Longueuil" autocomplete="off" oninput="filterCities(2)">
+        <div class="city-dd" id="dd2"></div>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn-comparer" id="btnComp" onclick="comparer()" disabled>
+    ⚖️ Comparer ces deux villes →
+  </button>
+
+  <div class="results" id="results">
+    <div class="comp-headers" id="compHeaders"></div>
+    <div class="verdict"      id="verdict"></div>
+    <div class="card">
+      <div class="card-title">📋 Comparaison des indicateurs MAMH</div>
+      <div style="overflow-x:auto">
+        <table class="comp-table" id="compTable"></table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📊 Visualisation comparée</div>
+      <div class="chart-container"><canvas id="chartComp"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<script src="js/data-client.js"></script>
+<script>
+let munis = [], selected = { 1: null, 2: null };
+
+async function init() {
+  try {
+    munis = await fetchMunicipalites(2000);
+  } catch {
+    munis = DEMO_MUNIS;
+  }
+
+  // Pré-remplir depuis l'URL (?ville1=58007)
+  const v1 = getUrlParam('ville1');
+  if (v1) {
+    const m = munis.find(m => String(m.code_geographique) === String(v1));
+    if (m) selectCity(1, m);
+  }
+}
+
+function filterCities(n) {
+  const q  = document.getElementById(`c${n}`).value.toLowerCase().trim();
+  const dd = document.getElementById(`dd${n}`);
+  if (q.length < 1) { dd.classList.remove('show'); return; }
+
+  const filtres = munis
+    .filter(m => m.nom.toLowerCase().includes(q))
+    .slice(0, 8);
+
+  if (!filtres.length) { dd.classList.remove('show'); return; }
+
+  dd.innerHTML = filtres.map(m => `
+    <div class="city-opt" onclick='selectCity(${n}, ${JSON.stringify(m).replace(/"/g, "&quot;")})'>
+      <div>
+        <div class="city-opt-nom">${m.nom}</div>
+        <div class="city-opt-region">${m.region_administrative || ''}</div>
+      </div>
+      <span class="city-opt-pop">${formatNombre(m.population)} hab.</span>
+    </div>`).join('');
+  dd.classList.add('show');
+}
+
+function selectCity(n, m) {
+  selected[n] = m;
+  document.getElementById(`c${n}`).value = m.nom;
+  document.getElementById(`dd${n}`).classList.remove('show');
+  if (selected[1] && selected[2]) {
+    document.getElementById('btnComp').disabled = false;
+  }
+}
+
+document.addEventListener('click', e => {
+  [1, 2].forEach(n => {
+    if (!document.getElementById(`c${n}`).contains(e.target))
+      document.getElementById(`dd${n}`).classList.remove('show');
+  });
+});
+
+async function comparer() {
+  const v1 = selected[1], v2 = selected[2];
+  if (!v1 || !v2) return;
+
+  const btn = document.getElementById('btnComp');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Chargement...';
+
+  // Si les villes n'ont pas toutes les métriques dans la liste,
+  // charger le fichier ville complet pour avoir les indicateurs MAMH
+  let d1 = { ...v1 }, d2 = { ...v2 };
+  try {
+    const [full1, full2] = await Promise.all([
+      fetchVille(v1.code_geographique),
+      fetchVille(v2.code_geographique),
+    ]);
+    d1 = { ...v1, ...(full1.dashboard || {}) };
+    d2 = { ...v2, ...(full2.dashboard || {}) };
+  } catch {
+    // Utilise les données de la liste si le fetch complet échoue
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '⚖️ Comparer ces deux villes →';
+
+  document.getElementById('results').classList.add('show');
+
+  // En-têtes
+  document.getElementById('compHeaders').innerHTML = `
+    <div class="comp-head h1">
+      <div class="comp-head-nom">${d1.nom}</div>
+      <div class="comp-head-sub">${d1.region_administrative || ''} · ${formatNombre(d1.population)} hab.</div>
+      <div class="comp-head-sub" style="margin-top:.4rem;opacity:.55">${d1.classe_population || ''}</div>
+    </div>
+    <div class="comp-head h2">
+      <div class="comp-head-nom">${d2.nom}</div>
+      <div class="comp-head-sub">${d2.region_administrative || ''} · ${formatNombre(d2.population)} hab.</div>
+      <div class="comp-head-sub" style="margin-top:.4rem;opacity:.55">${d2.classe_population || ''}</div>
+    </div>`;
+
+  const pop1 = d1.population || 1;
+  const pop2 = d2.population || 1;
+
+  const metrics = [
+    { label: 'Taux global de taxation (TGTU)',
+      v1: d1.taux_global_taxation,         v2: d2.taux_global_taxation,
+      fmt: formatTaux,                      lower: true },
+    { label: 'Charge fiscale / logement',
+      v1: d1.charge_fiscale_logement,      v2: d2.charge_fiscale_logement,
+      fmt: v => formatCAD(v, 0),           lower: true },
+    { label: "Indice d'effort fiscal",
+      v1: d1.indice_effort_fiscal,         v2: d2.indice_effort_fiscal,
+      fmt: v => Math.round(v) + ' / 100',  lower: true },
+    { label: 'Charges / 100$ RFU',
+      v1: d1.charge_nette_rfu,             v2: d2.charge_nette_rfu,
+      fmt: v => parseFloat(v).toFixed(2) + ' $', lower: true },
+    { label: 'Endettement / 100$ RFU',
+      v1: d1.endettement_rfu,              v2: d2.endettement_rfu,
+      fmt: v => parseFloat(v).toFixed(2) + ' $', lower: true },
+    { label: 'Charges / habitant',
+      v1: (d1.charges_totales || 0) / pop1, v2: (d2.charges_totales || 0) / pop2,
+      fmt: v => formatCAD(v, 0),            lower: true },
+    { label: 'Charges totales',
+      v1: d1.charges_totales,              v2: d2.charges_totales,
+      fmt: formatCAD,                       lower: false },
+    { label: 'Population',
+      v1: d1.population,                   v2: d2.population,
+      fmt: formatNombre,                    lower: false },
+  ];
+
+  // Tableau comparatif
+  let pts1 = 0, pts2 = 0;
+  const rows = metrics.map(m => {
+    const va = parseFloat(m.v1), vb = parseFloat(m.v2);
+    if (isNaN(va) || isNaN(vb)) {
+      return `<tr>
+        <td class="td-label">${m.label}</td>
+        <td class="td-val" colspan="2" style="color:var(--gris)">Données indisponibles</td>
+      </tr>`;
+    }
+    const w1 = m.lower ? va < vb : va > vb;
+    const w2 = m.lower ? vb < va : vb > va;
+    if (w1) pts1++;
+    if (w2) pts2++;
+    return `<tr>
+      <td class="td-label">${m.label}</td>
+      <td class="td-val ${w1 ? 'winner' : ''}">${m.fmt(va)}${w1 ? '<span class="win-badge">✓</span>' : ''}</td>
+      <td class="td-val ${w2 ? 'winner' : ''}">${m.fmt(vb)}${w2 ? '<span class="win-badge">✓</span>' : ''}</td>
+    </tr>`;
+  });
+
+  document.getElementById('compTable').innerHTML = `
+    <thead>
+      <tr>
+        <th>Indicateur</th>
+        <th>${d1.nom}</th>
+        <th>${d2.nom}</th>
+      </tr>
+    </thead>
+    <tbody>${rows.join('')}</tbody>`;
+
+  // Verdict
+  const total    = pts1 + pts2;
+  const gagnant  = pts1 > pts2 ? d1.nom : pts2 > pts1 ? d2.nom : null;
+  document.getElementById('verdict').innerHTML = `
+    <div class="verdict-icon">🏆</div>
+    <div class="verdict-titre">
+      ${gagnant
+        ? `${gagnant} obtient de meilleurs résultats sur la majorité des indicateurs`
+        : "Les deux villes sont comparables sur l'ensemble des indicateurs"}
+    </div>
+    <div class="verdict-score">
+      Score : ${d1.nom} <strong>${pts1}</strong> — <strong>${pts2}</strong> ${d2.nom}
+      (sur ${total} critères évalués)
+    </div>
+    <div class="verdict-note">
+      ⚠ Ces comparaisons sont indicatives et ne remplacent pas une analyse complète des budgets officiels.
+    </div>`;
+
+  // Graphique
+  if (window._chartComp) window._chartComp.destroy();
+  const canvas = document.getElementById('chartComp');
+  const labelsChart = ['TGTU ($/100$)', 'Ch./logement (k$)', 'Ch./hab. (k$)', 'Endet./RFU ($)'];
+  const dd1 = [
+    parseFloat(d1.taux_global_taxation) || 0,
+    (parseFloat(d1.charge_fiscale_logement) || 0) / 1000,
+    (parseFloat(d1.charges_totales) || 0) / pop1 / 1000,
+    parseFloat(d1.endettement_rfu) || 0,
+  ];
+  const dd2 = [
+    parseFloat(d2.taux_global_taxation) || 0,
+    (parseFloat(d2.charge_fiscale_logement) || 0) / 1000,
+    (parseFloat(d2.charges_totales) || 0) / pop2 / 1000,
+    parseFloat(d2.endettement_rfu) || 0,
+  ];
+
+  window._chartComp = new Chart(canvas.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: labelsChart,
+      datasets: [
+        { label: d1.nom, data: dd1, backgroundColor: '#1d4ed8bb', borderRadius: 6 },
+        { label: d2.nom, data: dd2, backgroundColor: '#7c3aedbb', borderRadius: 6 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top' } },
+      scales: {
+        y: { beginAtZero: true, grid: { color: '#f0ede6' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+}
+
+init();
+</script>
+<!-- ── Bannière dons ────────────────────────────────────────────── -->
+<div style="background:linear-gradient(90deg,#1e3a8a 0%,#2563eb 100%);color:white;padding:1.25rem 2rem;text-align:center;font-size:.9rem">
+  💙 ClicCitoyen est gratuit et indépendant.
+  <strong>Soutenir le projet :</strong> virement Interac à
+  <span style="font-family:monospace;background:rgba(255,255,255,.15);padding:.15rem .5rem;border-radius:4px;margin:0 .25rem">smouhoubi2@gmail.com</span>
+  — merci ! 🙏
+</div>
+</body>
+</html>

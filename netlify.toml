@@ -1,0 +1,19 @@
+[build]
+  publish = "."
+
+[[headers]]
+  for = "/data/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=300"
+
+# Notification email pour les soumissions du formulaire "contact"
+[[notifications.email]]
+  event = "forms/submission"
+  form = "contact"
+  to = "smouhoubi2@gmail.com"
+  subject = "ClicCitoyen — Nouveau message de contact"
