@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Explorateur de données — ClicCitoyen</title>
+<meta name="description" content="Explorez et comparez les indicateurs financiers MAMH de toutes les municipalités du Québec.">
+<meta property="og:title" content="Explorateur — ClicCitoyen">
+<meta property="og:description" content="Toutes les municipalités du Québec — 63 indicateurs MAMH, triables et filtrables.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Source+Sans+3:wght@300;400;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bleu:#0a1f44;--bleu-vif:#1d4ed8;--bleu-clair:#dbeafe;--vert:#059669;--orange:#d97706;--rouge:#c0392b;--creme:#f5f0e8;--beige:#e8e1d4;--texte:#1a1a2e;--gris:#6b7280;--blanc:#ffffff;--ombre:0 4px 24px rgba(10,31,68,.12);--radius:12px}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Sans 3',sans-serif;background:var(--creme);color:var(--texte)}
+nav{position:sticky;top:0;z-index:100;background:var(--bleu);display:flex;align-items:center;justify-content:space-between;padding:0 2rem;height:60px;box-shadow:0 2px 16px rgba(0,0,0,.25)}
+.nav-logo{font-family:'Libre Baskerville',serif;font-size:1.1rem;color:white;text-decoration:none}
+.nav-logo span{color:#60a5fa}
+.nav-links{display:flex;gap:1.5rem;list-style:none}
+.nav-links a{color:rgba(255,255,255,.8);text-decoration:none;font-size:.88rem;font-weight:600;transition:color .2s}
+.nav-links a:hover,.nav-links a.active{color:#60a5fa}
+.page-header{background:var(--bleu);padding:2.5rem 2rem;color:white}
+.page-header-inner{max-width:1180px;margin:0 auto}
+.page-header h1{font-family:'Libre Baskerville',serif;font-size:2rem;margin-bottom:.5rem}
+.page-header p{color:rgba(255,255,255,.7)}
+.main{max-width:1180px;margin:0 auto;padding:2rem}
+.filters{background:white;border-radius:var(--radius);padding:1.5rem;box-shadow:var(--ombre);margin-bottom:1.5rem;display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:1rem;align-items:end}
+@media(max-width:900px){.filters{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.filters{grid-template-columns:1fr}}
+.filter-group label{display:block;font-size:.8rem;font-weight:700;color:var(--bleu);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.05em}
+.filter-control{width:100%;padding:.75rem 1rem;border:2px solid var(--beige);border-radius:8px;font-size:.95rem;font-family:inherit;outline:none;transition:border-color .2s;background:white}
+.filter-control:focus{border-color:var(--bleu-vif)}
+.filter-count{font-size:.9rem;color:var(--gris);white-space:nowrap;align-self:flex-end;padding-bottom:.6rem}
+.filter-count strong{color:var(--bleu);font-family:'DM Mono',monospace}
+.legende-tgtu{display:flex;gap:1rem;font-size:.78rem;padding:.6rem 1rem;background:var(--creme);border-radius:8px;margin-bottom:1rem;flex-wrap:wrap;align-items:center}
+.legende-tgtu span{display:flex;align-items:center;gap:.4rem}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0}
+.table-wrap{background:white;border-radius:var(--radius);box-shadow:var(--ombre);overflow:hidden;border:1px solid var(--beige)}
+.table-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+thead{background:var(--bleu);color:white}
+th{padding:.9rem 1rem;text-align:left;font-size:.77rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;user-select:none;white-space:nowrap;transition:background .15s}
+th:hover,th.sorted{background:#1e3a8a}
+td{padding:.85rem 1rem;border-bottom:1px solid var(--beige);vertical-align:middle}
+tr:last-child td{border:none}
+tr:hover td{background:var(--creme);transition:background .15s}
+.td-nom{font-weight:700;color:var(--bleu);cursor:pointer;white-space:nowrap}
+.td-nom:hover{color:var(--bleu-vif);text-decoration:underline}
+.td-region{font-size:.77rem;color:var(--gris);margin-top:.1rem}
+.td-mono{font-family:'DM Mono',monospace}
+.tgtu-badge{display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .55rem;border-radius:999px;font-size:.78rem;font-weight:700;font-family:'DM Mono',monospace}
+.tgtu-low{background:#d1fae5;color:#065f46}
+.tgtu-mid{background:#fef3c7;color:#92400e}
+.tgtu-high{background:#fee2e2;color:#991b1b}
+.indice-val{display:flex;align-items:center;gap:.4rem}
+.indice-bar{width:40px;height:5px;background:var(--beige);border-radius:999px;overflow:hidden;flex-shrink:0}
+.indice-fill{height:100%;border-radius:999px}
+.pagination{display:flex;justify-content:center;align-items:center;gap:.4rem;padding:1.25rem;flex-wrap:wrap}
+.page-btn{padding:.45rem .8rem;border:1px solid var(--beige);border-radius:6px;background:white;cursor:pointer;font-size:.88rem;font-family:inherit;transition:all .15s;min-width:36px}
+.page-btn:hover{background:var(--bleu-clair);border-color:var(--bleu-vif)}
+.page-btn.active{background:var(--bleu-vif);color:white;border-color:var(--bleu-vif)}
+.page-btn:disabled{opacity:.4;cursor:not-allowed}
+.empty{text-align:center;padding:3rem;color:var(--gris)}
+.spinner{width:28px;height:28px;border-radius:50%;border:3px solid var(--beige);border-top-color:var(--bleu-vif);animation:spin .8s linear infinite;margin:2rem auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+th .sort-icon{opacity:.4;margin-left:.3rem;font-size:.75em}
+th.sorted .sort-icon{opacity:1}
+.nav-hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:.4rem;background:none;border:none;margin-left:.5rem}
+.nav-hamburger span{display:block;width:22px;height:2px;background:white;border-radius:2px;transition:transform .3s,opacity .3s}
+.nav-hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.nav-hamburger.open span:nth-child(2){opacity:0}
+.nav-hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+@media(max-width:640px){
+  nav{padding:0 1rem;flex-wrap:wrap;height:auto;min-height:60px}
+  .nav-hamburger{display:flex}
+  .nav-links{display:none;width:100%;flex-direction:column;gap:0;padding-bottom:.75rem}
+  .nav-links.open{display:flex}
+  .nav-links li{border-top:1px solid rgba(255,255,255,.1)}
+  .nav-links a{display:block;padding:.75rem .5rem;font-size:.9rem}
+}
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-logo">🏙️ Clic<span>Citoyen</span></a>
+  <ul class="nav-links" id="navLinks">>
+    <li><a href="explorateur.html" class="active">Explorer</a></li>
+    <li><a href="municipalites.html">Municipalités</a></li>
+    <li><a href="comparateur.html">Comparer</a></li>
+    <li><a href="a-propos.html">À propos</a></li>
+    <button class="nav-hamburger" aria-label="Menu" onclick="document.getElementById("navLinks").classList.toggle("open");this.classList.toggle("open")"><span></span><span></span><span></span></button>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <h1>Explorateur de données</h1>
+    <p>Toutes les municipalités du Québec — 63 indicateurs MAMH, triables et filtrables</p>
+  </div>
+</div>
+
+<div class="main">
+  <div class="filters">
+    <div class="filter-group">
+      <label>Recherche</label>
+      <input type="text" class="filter-control" id="filterNom"
+             placeholder="Nom de la ville..." oninput="filtrer()">
+    </div>
+    <div class="filter-group">
+      <label>Région</label>
+      <select class="filter-control" id="filterRegion" onchange="filtrer()">
+        <option value="">Toutes les régions</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Classe de population</label>
+      <select class="filter-control" id="filterClasse" onchange="filtrer()">
+        <option value="">Toutes les classes</option>
+        <option value="100 000">100 000 et plus</option>
+        <option value="25 000">25 000 à 99 999</option>
+        <option value="10 000">10 000 à 24 999</option>
+        <option value="2 000">2 000 à 9 999</option>
+        <option value="Moins">Moins de 2 000</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Trier par</label>
+      <select class="filter-control" id="filterSort" onchange="trier()">
+        <option value="population_desc">Population ↓</option>
+        <option value="taux_global_taxation_asc">TGTU ↑ (plus bas)</option>
+        <option value="taux_global_taxation_desc">TGTU ↓ (plus haut)</option>
+        <option value="charge_fiscale_logement_asc">Charge / logement ↑</option>
+        <option value="charge_fiscale_logement_desc">Charge / logement ↓</option>
+        <option value="indice_effort_fiscal_asc">Effort fiscal ↑</option>
+        <option value="charges_totales_desc">Charges totales ↓</option>
+        <option value="nom_asc">Nom A–Z</option>
+      </select>
+    </div>
+    <div class="filter-count"><strong id="countMunis">0</strong> résultats</div>
+  </div>
+
+  <div class="legende-tgtu">
+    <span><span class="dot" style="background:#059669"></span>TGTU &lt; 0,60 (faible)</span>
+    <span><span class="dot" style="background:#d97706"></span>TGTU 0,60–0,80 (moyen)</span>
+    <span><span class="dot" style="background:#dc2626"></span>TGTU &gt; 0,80 (élevé)</span>
+    <span style="margin-left:auto;color:#6b7280">Médiane Québec : 0,7265 $/100$</span>
+  </div>
+
+  <div class="table-wrap">
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="setSort('nom_asc')">Ville <span class="sort-icon">↕</span></th>
+            <th onclick="setSort('population_desc')">Population <span class="sort-icon">↕</span></th>
+            <th onclick="setSort('taux_global_taxation_asc')">TGTU $/100$ <span class="sort-icon">↕</span></th>
+            <th onclick="setSort('charge_fiscale_logement_asc')">Ch. / logement <span class="sort-icon">↕</span></th>
+            <th onclick="setSort('indice_effort_fiscal_asc')">Effort fiscal <span class="sort-icon">↕</span></th>
+            <th onclick="setSort('charges_totales_desc')">Charges tot. <span class="sort-icon">↕</span></th>
+            <th>Année</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr><td colspan="8"><div class="spinner"></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+
+<script src="js/data-client.js"></script>
+<script>
+let allData = [], filtered = [], page = 1;
+const PER_PAGE = 25;
+
+async function init() {
+  // Pré-remplir le filtre depuis l'URL (?q=Brossard)
+  const q = getUrlParam('q');
+  if (q) document.getElementById('filterNom').value = q;
+
+  try {
+    allData = await fetchMunicipalites(2000);
+  } catch {
+    allData = DEMO_MUNIS;
+  }
+
+  // Construire la liste des régions dynamiquement
+  const regions = [...new Set(allData.map(m => m.region_administrative).filter(Boolean))].sort();
+  const sel = document.getElementById('filterRegion');
+  regions.forEach(r => {
+    const o = document.createElement('option');
+    o.value = r; o.textContent = r;
+    sel.appendChild(o);
+  });
+
+  filtrer();
+}
+
+function filtrer() {
+  page = 1;
+  const nom    = document.getElementById('filterNom').value.toLowerCase().trim();
+  const region = document.getElementById('filterRegion').value;
+  const classe = document.getElementById('filterClasse').value;
+
+  filtered = allData.filter(m => {
+    if (nom && !m.nom.toLowerCase().includes(nom)) return false;
+    if (region && m.region_administrative !== region) return false;
+    if (classe) {
+      const cp = (m.classe_population || '').toLowerCase();
+      if (!cp.includes(classe.toLowerCase())) return false;
+    }
+    return true;
+  });
+  trier(false);
+}
+
+function setSort(val) {
+  document.getElementById('filterSort').value = val;
+  // Mettre à jour l'indicateur visuel sur le th
+  document.querySelectorAll('th').forEach(th => th.classList.remove('sorted'));
+  trier();
+}
+
+function trier(reset = true) {
+  if (reset) page = 1;
+  const sortVal = document.getElementById('filterSort').value;
+  // Séparer le champ et la direction (ex: "population_desc" → field="population", dir="desc")
+  const lastUnderscore = sortVal.lastIndexOf('_');
+  const field = sortVal.substring(0, lastUnderscore);
+  const dir   = sortVal.substring(lastUnderscore + 1);
+  const asc   = dir === 'asc';
+
+  filtered.sort((a, b) => {
+    let va = a[field], vb = b[field];
+    if (va == null) va = asc ? Infinity : -Infinity;
+    if (vb == null) vb = asc ? Infinity : -Infinity;
+    if (typeof va === 'string') {
+      return asc ? va.localeCompare(vb, 'fr') : vb.localeCompare(va, 'fr');
+    }
+    return asc ? va - vb : vb - va;
+  });
+
+  document.getElementById('countMunis').textContent = filtered.length;
+  afficherPage();
+}
+
+function afficherPage() {
+  const start = (page - 1) * PER_PAGE;
+  const slice = filtered.slice(start, start + PER_PAGE);
+  const body  = document.getElementById('tableBody');
+
+  if (!slice.length) {
+    body.innerHTML = `<tr><td colspan="8"><div class="empty">Aucune municipalité trouvée pour ces critères.</div></td></tr>`;
+    document.getElementById('pagination').innerHTML = '';
+    return;
+  }
+
+  body.innerHTML = slice.map(m => {
+    const tgtu   = parseFloat(m.taux_global_taxation);
+    const tgtuCl = !isNaN(tgtu)
+      ? (tgtu < 0.60 ? 'tgtu-low' : tgtu < 0.80 ? 'tgtu-mid' : 'tgtu-high')
+      : '';
+    const idx    = m.indice_effort_fiscal;
+    const pctIdx = idx ? Math.min(parseFloat(idx), 150) / 1.5 : 0;
+    const idxCl  = idx
+      ? (parseFloat(idx) < 95 ? '#059669' : parseFloat(idx) < 110 ? '#d97706' : '#dc2626')
+      : '#e8e1d4';
+
+    return `<tr>
+      <td>
+        <div class="td-nom" onclick="window.location='ville.html?id=${m.code_geographique}'">${m.nom}</div>
+        <div class="td-region">${m.region_administrative || '—'}</div>
+      </td>
+      <td class="td-mono">${formatNombre(m.population)}</td>
+      <td>
+        ${!isNaN(tgtu)
+          ? `<span class="tgtu-badge ${tgtuCl}">${tgtu.toFixed(4)}</span>`
+          : '<span style="color:var(--gris)">—</span>'}
+      </td>
+      <td class="td-mono">${m.charge_fiscale_logement ? formatCAD(m.charge_fiscale_logement, 0) : '—'}</td>
+      <td>
+        ${idx ? `<div class="indice-val">
+          <span class="td-mono" style="min-width:36px">${Math.round(idx)}</span>
+          <div class="indice-bar">
+            <div class="indice-fill" style="width:${pctIdx.toFixed(0)}%;background:${idxCl}"></div>
+          </div>
+        </div>` : '—'}
+      </td>
+      <td class="td-mono">${formatCAD(m.charges_totales)}</td>
+      <td class="td-mono" style="font-size:.8rem;color:var(--gris)">${m.annee_fiscale || '—'}</td>
+      <td>
+        <a href="ville.html?id=${m.code_geographique}"
+           style="color:var(--bleu-vif);font-weight:700;font-size:.85rem;text-decoration:none">→</a>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // Pagination
+  const total = Math.ceil(filtered.length / PER_PAGE);
+  const pag   = document.getElementById('pagination');
+  if (total <= 1) { pag.innerHTML = ''; return; }
+
+  let html = `<button class="page-btn" onclick="goPage(${page - 1})" ${page === 1 ? 'disabled' : ''}>← Préc.</button>`;
+  for (let i = 1; i <= total; i++) {
+    if (i === 1 || i === total || (i >= page - 1 && i <= page + 1)) {
+      html += `<button class="page-btn ${i === page ? 'active' : ''}" onclick="goPage(${i})">${i}</button>`;
+    } else if (i === page - 2 || i === page + 2) {
+      html += `<span style="padding:.4rem;color:var(--gris)">…</span>`;
+    }
+  }
+  html += `<button class="page-btn" onclick="goPage(${page + 1})" ${page === total ? 'disabled' : ''}>Suiv. →</button>`;
+  pag.innerHTML = html;
+}
+
+function goPage(n) {
+  page = n;
+  afficherPage();
+  document.querySelector('.table-wrap').scrollIntoView({ behavior: 'smooth' });
+}
+
+init();
+</script>
+<!-- ── Bannière dons ────────────────────────────────────────────── -->
+<div style="background:linear-gradient(90deg,#1e3a8a 0%,#2563eb 100%);color:white;padding:1.25rem 2rem;text-align:center;font-size:.9rem">
+  💙 ClicCitoyen est gratuit et indépendant.
+  <strong>Soutenir le projet :</strong> virement Interac à
+  <span style="font-family:monospace;background:rgba(255,255,255,.15);padding:.15rem .5rem;border-radius:4px;margin:0 .25rem">smouhoubi2@gmail.com</span>
+  — merci ! 🙏
+</div>
+</body>
+</html>

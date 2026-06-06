@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClicCitoyen — Vos taxes municipales, enfin décodées</title>
+<meta name="description" content="Explorez les budgets de 1 100+ municipalités du Québec. Comparez les taxes, suivez les dépenses et contactez vos élus.">
+<meta property="og:title" content="ClicCitoyen — Transparence municipale au Québec">
+<meta property="og:description" content="Explorez les indicateurs financiers MAMH de 1 100+ municipalités. Comparez les taxes, analysez les dépenses.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Source+Sans+3:wght@300;400;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bleu:#0a1f44;--bleu-vif:#1d4ed8;--bleu-clair:#dbeafe;--creme:#f5f0e8;--beige:#e8e1d4;--texte:#1a1a2e;--gris:#6b7280;--blanc:#ffffff;--ombre:0 4px 24px rgba(10,31,68,.12);--radius:12px;--transition:.25s cubic-bezier(.4,0,.2,1)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Source Sans 3',sans-serif;background:var(--creme);color:var(--texte);line-height:1.6;overflow-x:hidden}
+nav{position:sticky;top:0;z-index:100;background:var(--bleu);display:flex;align-items:center;justify-content:space-between;padding:0 2rem;height:60px;box-shadow:0 2px 16px rgba(0,0,0,.25)}
+.nav-logo{font-family:'Libre Baskerville',serif;font-size:1.25rem;font-weight:700;color:white;text-decoration:none;display:flex;align-items:center;gap:.5rem}
+.nav-logo span{color:#60a5fa}
+.nav-links{display:flex;gap:1.5rem;list-style:none}
+.nav-links a{color:rgba(255,255,255,.8);text-decoration:none;font-size:.9rem;font-weight:600;letter-spacing:.03em;text-transform:uppercase;transition:color var(--transition)}
+.nav-links a:hover{color:#60a5fa}
+/* HERO */
+.hero{background:var(--bleu);color:white;padding:5rem 2rem 6rem;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 20% 50%,rgba(29,78,216,.4) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(192,57,43,.2) 0%,transparent 50%);pointer-events:none}
+.hero-label{display:inline-block;background:rgba(96,165,250,.2);border:1px solid rgba(96,165,250,.4);color:#93c5fd;font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.35rem 1rem;border-radius:999px;margin-bottom:1.5rem}
+.hero h1{font-family:'Libre Baskerville',serif;font-size:clamp(2rem,5vw,3.5rem);line-height:1.15;font-weight:700;max-width:760px;margin:0 auto 1rem}
+.hero h1 em{font-style:italic;color:#93c5fd}
+.hero-sub{font-size:1.15rem;color:rgba(255,255,255,.75);max-width:600px;margin:0 auto 2.5rem}
+.search-wrapper{position:relative;max-width:600px;margin:0 auto;display:flex;gap:.5rem}
+.search-wrapper input{flex:1;padding:1rem 1.25rem;font-size:1rem;font-family:inherit;border:2px solid rgba(255,255,255,.2);border-radius:var(--radius);background:rgba(255,255,255,.1);color:white;outline:none;transition:border-color var(--transition),background var(--transition);backdrop-filter:blur(8px)}
+.search-wrapper input::placeholder{color:rgba(255,255,255,.45)}
+.search-wrapper input:focus{border-color:#60a5fa;background:rgba(255,255,255,.15)}
+.search-wrapper button{padding:1rem 1.5rem;background:var(--bleu-vif);color:white;border:none;border-radius:var(--radius);font-size:1rem;font-weight:700;cursor:pointer;transition:background var(--transition),transform var(--transition);white-space:nowrap}
+.search-wrapper button:hover{background:#2563eb;transform:translateY(-1px)}
+#suggestions{position:absolute;top:calc(100% + .5rem);left:0;right:4.5rem;background:white;border-radius:var(--radius);box-shadow:var(--ombre);z-index:200;max-height:280px;overflow-y:auto;display:none}
+#suggestions.active{display:block}
+.sug-item{padding:.85rem 1.25rem;cursor:pointer;border-bottom:1px solid var(--beige);display:flex;align-items:center;justify-content:space-between;transition:background var(--transition)}
+.sug-item:last-child{border:none}
+.sug-item:hover{background:var(--creme)}
+.sug-nom{font-weight:700;color:var(--texte)}
+.sug-region{font-size:.78rem;color:var(--gris)}
+.sug-pop{font-family:'DM Mono',monospace;font-size:.78rem;color:var(--bleu-vif)}
+/* STATS BAR */
+.stats-bar{background:var(--bleu-vif);padding:1.25rem 2rem;display:flex;justify-content:center;gap:4rem;flex-wrap:wrap}
+.stat-num{display:block;font-family:'DM Mono',monospace;font-size:1.5rem;font-weight:700;color:white;line-height:1}
+.stat-label{font-size:.8rem;font-weight:600;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.06em}
+/* SECTIONS */
+.section{max-width:1180px;margin:0 auto;padding:4rem 2rem}
+.section-title{font-family:'Libre Baskerville',serif;font-size:1.7rem;font-weight:700;color:var(--bleu);margin-bottom:.5rem}
+.section-sub{color:var(--gris);font-size:1rem;margin-bottom:2.5rem}
+/* PILIERS */
+.piliers{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem}
+.pilier{background:white;border-radius:var(--radius);padding:2rem;box-shadow:var(--ombre);border-top:4px solid var(--bleu-vif);transition:transform var(--transition)}
+.pilier:hover{transform:translateY(-4px)}
+.pilier-icon{font-size:2rem;margin-bottom:1rem}
+.pilier h3{font-family:'Libre Baskerville',serif;font-size:1.1rem;color:var(--bleu);margin-bottom:.5rem}
+.pilier p{color:var(--gris);font-size:.95rem}
+/* VILLES */
+.villes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.25rem}
+.ville-card{background:white;border-radius:var(--radius);padding:1.5rem;box-shadow:var(--ombre);border:1px solid var(--beige);cursor:pointer;transition:transform var(--transition),box-shadow var(--transition)}
+.ville-card:hover{transform:translateY(-3px);box-shadow:0 8px 32px rgba(10,31,68,.18)}
+.ville-card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1rem}
+.ville-nom{font-family:'Libre Baskerville',serif;font-size:1.15rem;font-weight:700;color:var(--bleu)}
+.ville-region{font-size:.8rem;color:var(--gris);margin-top:.2rem}
+.ville-badge{background:var(--bleu-clair);color:var(--bleu-vif);font-size:.73rem;font-weight:700;padding:.25rem .6rem;border-radius:999px;font-family:'DM Mono',monospace;white-space:nowrap}
+.ville-stats{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:1rem}
+.stat-label-card{font-size:.73rem;color:var(--gris);text-transform:uppercase;letter-spacing:.05em}
+.stat-val{font-family:'DM Mono',monospace;font-size:.97rem;font-weight:500;color:var(--texte)}
+.ville-card-footer{margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--beige);display:flex;justify-content:space-between;align-items:center;font-size:.83rem}
+.btn-voir{color:var(--bleu-vif);font-weight:700}
+.classe-tag{font-size:.72rem;color:var(--gris);font-style:italic}
+/* SAVIEZ-VOUS */
+.saviez-vous{background:linear-gradient(135deg,var(--bleu),#1e3a8a);color:white;border-radius:var(--radius);padding:2.5rem;margin:2rem 0;position:relative;overflow:hidden}
+.saviez-vous::before{content:'💡';position:absolute;right:2rem;top:50%;transform:translateY(-50%);font-size:4rem;opacity:.15}
+.saviez-vous-label{font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#93c5fd;margin-bottom:.75rem}
+.saviez-vous p{font-size:1.05rem;line-height:1.7;max-width:600px}
+.saviez-vous strong{color:#fbbf24}
+/* SKELETON */
+.skeleton{background:linear-gradient(90deg,#e8e1d4 25%,#f5f0e8 50%,#e8e1d4 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:6px}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+/* CONTACT */
+.contact-section{background:white;border-top:4px solid var(--bleu-vif)}
+.contact-inner{max-width:780px;margin:0 auto;padding:4rem 2rem}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+@media(max-width:560px){.form-row{grid-template-columns:1fr}}
+.form-group{display:flex;flex-direction:column;gap:.4rem}
+.form-label{font-size:.82rem;font-weight:700;color:var(--bleu);text-transform:uppercase;letter-spacing:.05em}
+.form-control{padding:.85rem 1.1rem;border:2px solid var(--beige);border-radius:8px;font-size:.97rem;font-family:inherit;background:var(--creme);color:var(--texte);outline:none;transition:border-color var(--transition),background var(--transition)}
+.form-control:focus{border-color:var(--bleu-vif);background:white}
+textarea.form-control{resize:vertical;min-height:130px;line-height:1.6}
+.form-submit{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-top:1.25rem}
+.btn-envoyer{padding:.9rem 2rem;background:var(--bleu-vif);color:white;border:none;border-radius:8px;font-size:1rem;font-weight:700;font-family:inherit;cursor:pointer;transition:background var(--transition),transform var(--transition);display:flex;align-items:center;gap:.5rem}
+.btn-envoyer:hover{background:#1e40af;transform:translateY(-1px)}
+.btn-envoyer:disabled{background:var(--gris);cursor:not-allowed;transform:none}
+.form-note{font-size:.8rem;color:var(--gris)}
+.form-feedback{padding:1rem 1.25rem;border-radius:8px;font-size:.93rem;font-weight:600;display:none;margin-bottom:1rem}
+.form-feedback.success{display:block;background:#d1fae5;color:#065f46;border:1px solid #a7f3d0}
+.form-feedback.error{display:block;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}
+/* FOOTER */
+footer{background:var(--bleu);color:rgba(255,255,255,.6);padding:2.5rem 2rem;text-align:center}
+footer a{color:#60a5fa;text-decoration:none}
+.footer-logo{font-family:'Libre Baskerville',serif;font-size:1.2rem;color:white;margin-bottom:.5rem}
+.footer-credits{font-size:.85rem;margin-top:1rem;line-height:1.8}
+.footer-links{display:flex;justify-content:center;gap:2rem;margin:1.25rem 0;flex-wrap:wrap}
+.footer-links a{font-size:.9rem}
+.footer-author{margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid rgba(255,255,255,.12);font-size:.82rem;color:rgba(255,255,255,.45)}
+.nav-hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:.4rem;background:none;border:none;margin-left:.5rem}
+.nav-hamburger span{display:block;width:22px;height:2px;background:white;border-radius:2px;transition:transform .3s,opacity .3s}
+.nav-hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.nav-hamburger.open span:nth-child(2){opacity:0}
+.nav-hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+@media(max-width:640px){
+  .stats-bar{gap:2rem}
+  nav{padding:0 1rem;flex-wrap:wrap;height:auto;min-height:60px}
+  .nav-hamburger{display:flex}
+  .nav-links{display:none;width:100%;flex-direction:column;gap:0;padding-bottom:.75rem}
+  .nav-links.open{display:flex}
+  .nav-links li{border-top:1px solid rgba(255,255,255,.1)}
+  .nav-links a{display:block;padding:.75rem .5rem;font-size:.9rem}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">🏙️ Clic<span>Citoyen</span></a>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="explorateur.html">Explorer</a></li>
+    <li><a href="municipalites.html">Municipalités</a></li>
+    <li><a href="comparateur.html">Comparer</a></li>
+    <li><a href="a-propos.html">À propos</a></li>
+  </ul>
+  <button class="nav-hamburger" id="navHamburger" aria-label="Menu" onclick="document.getElementById('navLinks').classList.toggle('open');this.classList.toggle('open')">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<section class="hero">
+  <div class="hero-label">🏛 Transparence municipale · Québec</div>
+  <h1>Votre ville, vos taxes,<br><em>vos élus.</em> Enfin en clair.</h1>
+  <p class="hero-sub">Explorez les indicateurs financiers MAMH de <strong>1 100+</strong> municipalités du Québec. Comparez, analysez et contactez vos élus.</p>
+  <div class="search-wrapper">
+    <input type="text" id="searchInput" placeholder="Entrez le nom de votre ville (ex: Brossard, Laval...)" autocomplete="off">
+    <button onclick="lancerRecherche()">→ Rechercher</button>
+    <div id="suggestions"></div>
+  </div>
+</section>
+
+<div class="stats-bar">
+  <div><span class="stat-num" id="statMunis">1 100+</span><span class="stat-label">Municipalités</span></div>
+  <div><span class="stat-num">63</span><span class="stat-label">Indicateurs MAMH</span></div>
+  <div><span class="stat-num" id="statAnnee">2024</span><span class="stat-label">Dernière année</span></div>
+  <div><span class="stat-num">100%</span><span class="stat-label">Données officielles</span></div>
+</div>
+
+<div class="section">
+  <h2 class="section-title">Comment ça marche ?</h2>
+  <p class="section-sub">Trois outils pour comprendre vos finances municipales</p>
+  <div class="piliers">
+    <div class="pilier"><div class="pilier-icon">📊</div><h3>63 indicateurs MAMH</h3><p>Taux de taxation, charges nettes, endettement, richesse foncière et indices de performance — tous les indicateurs officiels du Ministère.</p></div>
+    <div class="pilier"><div class="pilier-icon">⚖️</div><h3>Comparez par groupe</h3><p>Positionnez votre ville par rapport à sa classe de population, sa région administrative et la médiane provinciale.</p></div>
+    <div class="pilier"><div class="pilier-icon">📈</div><h3>Tendances pluriannuelles</h3><p>Suivez l'évolution du TGTU, des charges et de la dette sur 3 ans (2023–2025) pour détecter les tendances structurelles.</p></div>
+  </div>
+</div>
+
+<div class="section" style="padding-top:0">
+  <div class="saviez-vous">
+    <div class="saviez-vous-label">💡 Le saviez-vous ?</div>
+    <p id="saviez-vous-text">Chargement...</p>
+  </div>
+</div>
+
+<div class="section" style="padding-top:0">
+  <h2 class="section-title">Villes en vedette</h2>
+  <p class="section-sub">Données MAMH — Dernière année disponible</p>
+  <div class="villes-grid" id="villesGrid">
+    <div class="ville-card"><div class="skeleton" style="height:140px"></div></div>
+    <div class="ville-card"><div class="skeleton" style="height:140px"></div></div>
+    <div class="ville-card"><div class="skeleton" style="height:140px"></div></div>
+    <div class="ville-card"><div class="skeleton" style="height:140px"></div></div>
+    <div class="ville-card"><div class="skeleton" style="height:140px"></div></div>
+  </div>
+</div>
+
+<!-- CONTACT -->
+<section class="contact-section" id="contact">
+  <div class="contact-inner">
+    <h2 class="section-title">Nous écrire</h2>
+    <p class="section-sub">Une question, une erreur à signaler ou une suggestion ? On vous répond sous 48 h.</p>
+    <div id="formFeedback" class="form-feedback"></div>
+    <form class="contact-form" id="contactForm" name="contact" method="POST"
+          data-netlify="true" netlify-honeypot="bot-field" novalidate style="display:grid;gap:1.25rem">
+      <input type="hidden" name="form-name" value="contact">
+      <input type="hidden" name="_to" value="smouhoubi2@gmail.com">
+      <p style="display:none"><input name="bot-field"></p>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="contactNom">Votre nom *</label>
+          <input type="text" id="contactNom" name="nom" class="form-control" placeholder="ex : Marie Tremblay" required maxlength="100">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="contactEmail">Votre courriel *</label>
+          <input type="email" id="contactEmail" name="email" class="form-control" placeholder="ex : marie@exemple.com" required maxlength="200">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="contactMessage">Votre message *</label>
+        <textarea id="contactMessage" name="message" class="form-control" placeholder="Décrivez votre question ou commentaire..." required maxlength="2000"></textarea>
+      </div>
+      <div class="form-submit">
+        <button type="submit" class="btn-envoyer" id="btnEnvoyer"><span>✉️</span> Envoyer le message</button>
+        <span class="form-note">* Champs obligatoires · Vos données ne sont jamais revendues.</span>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- ── Section dons ──────────────────────────────────────── -->
+<section style="background:linear-gradient(135deg,#f0f7ff 0%,#e8f4ff 100%);border-top:3px solid var(--bleu-vif);padding:3rem 2rem;text-align:center" id="soutenir">
+  <div style="max-width:600px;margin:0 auto">
+    <div style="font-size:2.2rem;margin-bottom:.75rem">💙</div>
+    <h2 style="font-family:'Libre Baskerville',serif;color:var(--bleu);font-size:1.5rem;margin-bottom:.75rem">Soutenir ClicCitoyen</h2>
+    <p style="color:var(--gris);line-height:1.7;margin-bottom:1rem">
+      ClicCitoyen est un projet <strong>entièrement gratuit et indépendant</strong>, sans publicité ni financement institutionnel.
+      Si cet outil vous est utile, un don — même modeste — permet de couvrir les frais d'hébergement et de maintenir les données à jour.
+    </p>
+    <div style="background:white;border-radius:12px;padding:1.5rem 2rem;box-shadow:0 4px 20px rgba(0,0,0,.08);display:inline-block;margin-bottom:1.25rem">
+      <div style="font-size:.85rem;color:var(--gris);margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.06em;font-weight:600">Virement Interac</div>
+      <div style="font-size:1.25rem;font-weight:700;color:var(--bleu);letter-spacing:.02em;font-family:'DM Mono',monospace">smouhoubi2@gmail.com</div>
+      <div style="font-size:.8rem;color:var(--gris);margin-top:.4rem">Aucun compte requis — accepte tous les virements Interac</div>
+    </div>
+    <div style="font-size:.84rem;color:var(--gris)">
+      Tout montant est apprécié. Merci de votre soutien ! 🙏
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo">🏙️ ClicCitoyen</div>
+  <p>La transparence municipale, une donnée à la fois.</p>
+  <div class="footer-links">
+    <a href="explorateur.html">Explorateur</a>
+    <a href="comparateur.html">Comparateur</a>
+    <a href="a-propos.html">À propos &amp; Sources</a>
+    <a href="#contact">Contact</a>
+    <a href="#soutenir" style="color:#fbbf24;font-weight:700">💙 Faire un don</a>
+  </div>
+  <div class="footer-credits">
+    Données provenant de <a href="https://www.donneesquebec.ca" target="_blank">Données Québec</a>
+    et du <a href="https://www.mamh.gouv.qc.ca" target="_blank">MAMH</a>.<br>
+    Site non affilié au gouvernement du Québec. Estimations à titre indicatif uniquement.
+  </div>
+  <div class="footer-author">
+    Conçu et développé par <strong style="color:rgba(255,255,255,.7)">A. Mouhoubi</strong> — Tous droits réservés &copy; <span id="anneeFooter"></span>
+  </div>
+</footer>
+
+<script src="js/data-client.js"></script>
+<script>
+// ── Faits aléatoires ─────────────────────────────────────
+const faits = [
+  'À <strong>Brossard</strong>, le TGTU de <strong>0,4911 $/100$</strong> en 2024 est nettement inférieur à la médiane provinciale de <strong>0,7265 $/100$</strong>.',
+  'La <strong>charge fiscale moyenne par logement</strong> au Québec est de <strong>2 511 $</strong>. Certaines villes dépassent les 5 000 $ selon leur RFU.',
+  'Le <strong>TGTU</strong> (Taux global de taxation uniformisé) permet de comparer équitablement les taux de toutes les municipalités, indépendamment de leur méthode d\'évaluation.',
+  'L\'<strong>indice d\'effort fiscal</strong> mesure si une ville taxe plus ou moins que sa capacité. Un indice de 100 = médiane provinciale.',
+  'La <strong>Richesse foncière uniformisée (RFU)</strong> représente la valeur totale des immeubles imposables d\'une ville — c\'est la base de calcul du TGTU.',
+];
+document.getElementById('saviez-vous-text').innerHTML = faits[Math.floor(Math.random()*faits.length)];
+document.getElementById('anneeFooter').textContent = new Date().getFullYear();
+
+// ── Recherche ─────────────────────────────────────────────
+let munis = [];
+const input  = document.getElementById('searchInput');
+const sugDiv = document.getElementById('suggestions');
+
+async function chargerMunis() {
+  try {
+    munis = await fetchMunicipalites(2000);
+    // Mettre à jour les stats dynamiques
+    if (munis.length) {
+      document.getElementById('statMunis').textContent = munis.length.toLocaleString('fr-CA');
+      const annee = munis[0].annee_fiscale;
+      if (annee) document.getElementById('statAnnee').textContent = annee;
+    }
+  } catch {
+    munis = DEMO_MUNIS;
+  }
+}
+
+let searchTimeout;
+input.addEventListener('input', () => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(afficherSuggestions, 200);
+});
+input.addEventListener('keydown', e => {
+  if (e.key === 'Enter')  lancerRecherche();
+  if (e.key === 'Escape') sugDiv.classList.remove('active');
+});
+document.addEventListener('click', e => {
+  if (!input.contains(e.target)) sugDiv.classList.remove('active');
+});
+
+function afficherSuggestions() {
+  const q = input.value.trim().toLowerCase();
+  if (q.length < 2) { sugDiv.classList.remove('active'); return; }
+  const filtres = munis.filter(m => m.nom.toLowerCase().includes(q)).slice(0, 8);
+  if (!filtres.length) { sugDiv.classList.remove('active'); return; }
+  sugDiv.innerHTML = filtres.map(m => `
+    <div class="sug-item" onclick="allerVersVille('${m.code_geographique}')">
+      <div><div class="sug-nom">${m.nom}</div><div class="sug-region">${m.region_administrative || ''}</div></div>
+      <span class="sug-pop">${formatNombre(m.population)} hab.</span>
+    </div>`).join('');
+  sugDiv.classList.add('active');
+}
+
+function allerVersVille(code) {
+  window.location.href = `ville.html?id=${code}`;
+}
+
+function lancerRecherche() {
+  const q = input.value.trim().toLowerCase();
+  const match = munis.find(m => m.nom.toLowerCase() === q);
+  if (match) allerVersVille(match.code_geographique);
+  else if (q.length > 1) window.location.href = `explorateur.html?q=${encodeURIComponent(q)}`;
+}
+
+// ── Villes en vedette ─────────────────────────────────────
+async function chargerVilles() {
+  try {
+    const data = await fetchMunicipalites(6);
+    if (!data.length) throw new Error('no data');
+    afficherVilles(data);
+  } catch {
+    afficherVilles(DEMO_MUNIS.slice(0, 5));
+  }
+}
+
+function afficherVilles(data) {
+  document.getElementById('villesGrid').innerHTML = data.map(v => `
+    <div class="ville-card" onclick="allerVersVille('${v.code_geographique}')">
+      <div class="ville-card-header">
+        <div>
+          <div class="ville-nom">${v.nom}</div>
+          <div class="ville-region">${v.region_administrative || ''}</div>
+        </div>
+        <span class="ville-badge">${v.annee_fiscale || 2024}</span>
+      </div>
+      <div class="ville-stats">
+        <div>
+          <div class="stat-label-card">Population</div>
+          <div class="stat-val">${formatNombre(v.population)}</div>
+        </div>
+        <div>
+          <div class="stat-label-card">TGTU</div>
+          <div class="stat-val">${v.taux_global_taxation ? parseFloat(v.taux_global_taxation).toFixed(4) : '—'}</div>
+        </div>
+        <div>
+          <div class="stat-label-card">Charges totales</div>
+          <div class="stat-val">${formatCAD(v.charges_totales)}</div>
+        </div>
+        <div>
+          <div class="stat-label-card">Charge / logement</div>
+          <div class="stat-val">${v.charge_fiscale_logement ? formatCAD(v.charge_fiscale_logement, 0) : '—'}</div>
+        </div>
+      </div>
+      <div class="ville-card-footer">
+        <span class="btn-voir">Voir le tableau de bord →</span>
+        <span class="classe-tag">${v.classe_population || ''}</span>
+      </div>
+    </div>`).join('');
+}
+
+// ── Formulaire Netlify ────────────────────────────────────
+document.getElementById('contactForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btnEnvoyer');
+  const fb  = document.getElementById('formFeedback');
+  const nom    = document.getElementById('contactNom').value.trim();
+  const email  = document.getElementById('contactEmail').value.trim();
+  const msg    = document.getElementById('contactMessage').value.trim();
+  if (!nom || !email || !msg) {
+    fb.className = 'form-feedback error';
+    fb.textContent = '⚠ Veuillez remplir tous les champs.';
+    return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    fb.className = 'form-feedback error';
+    fb.textContent = '⚠ Courriel invalide.';
+    return;
+  }
+  btn.disabled = true;
+  btn.innerHTML = '<span>⏳</span> Envoi...';
+  fb.style.display = 'none';
+  try {
+    const r = await fetch('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(new FormData(this)).toString(),
+    });
+    if (r.ok) {
+      fb.className = 'form-feedback success';
+      fb.textContent = '✅ Message envoyé ! Réponse sous 48 h.';
+      this.reset();
+    } else throw new Error();
+  } catch {
+    fb.className = 'form-feedback error';
+    fb.textContent = '⚠ Erreur d\'envoi. Veuillez réessayer.';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<span>✉️</span> Envoyer le message';
+    fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+});
+
+chargerMunis();
+chargerVilles();
+</script>
+</body>
+</html>
