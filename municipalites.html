@@ -68,9 +68,9 @@ nav{position:sticky;top:0;z-index:100;background:var(--bleu);display:flex;align-
 .muni-list{background:white;border-radius:var(--radius);box-shadow:var(--ombre);overflow:hidden}
 
 /* Groupe par lettre */
-.letter-group{border-bottom:2px solid var(--beige);scroll-margin-top:68px}
+.letter-group{border-bottom:2px solid var(--beige);scroll-margin-top:60px}
 .letter-group:last-child{border-bottom:none}
-.letter-header{padding:.35rem 1.25rem;background:linear-gradient(90deg,var(--bleu) 0%,#1e3a8a 100%);color:white;font-family:'Libre Baskerville',serif;font-size:1rem;font-weight:700;display:flex;align-items:center;gap:.75rem;position:sticky;top:60px;z-index:10;scroll-margin-top:60px}
+.letter-header{padding:.35rem 1.25rem;background:linear-gradient(90deg,var(--bleu) 0%,#1e3a8a 100%);color:white;font-family:'Libre Baskerville',serif;font-size:1rem;font-weight:700;display:flex;align-items:center;gap:.75rem;position:sticky;top:60px;z-index:10}
 .letter-header .letter-count{font-family:'DM Mono',monospace;font-size:.78rem;font-weight:400;color:rgba(255,255,255,.6);letter-spacing:.03em}
 
 .muni-row{display:grid;grid-template-columns:3fr 2fr 1fr;align-items:center;padding:.75rem 1.25rem;border-bottom:1px solid var(--beige);transition:background var(--transition);cursor:pointer;text-decoration:none;color:inherit}
@@ -370,8 +370,14 @@ function render(query) {
 
   // Si une lettre est active, scroller vers elle
   if (activeLetter) {
-    const anchor = document.getElementById(`lettre-${activeLetter}`);
-    if (anchor) anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    requestAnimationFrame(() => {
+      const anchor = document.getElementById(`lettre-${activeLetter}`);
+      if (anchor) {
+        const navH = document.querySelector('nav')?.offsetHeight || 60;
+        const top  = anchor.getBoundingClientRect().top + window.scrollY - navH - 8;
+        window.scrollTo({ top, behavior: 'smooth' });
+      }
+    });
   }
 }
 

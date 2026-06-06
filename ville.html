@@ -293,7 +293,7 @@ function afficherHero() {
     dashData?.mrc ? `<div class="meta-badge"><span>🗺</span>${dashData.mrc}</div>` : '',
     dashData?.communaute_metropolitaine ? `<div class="meta-badge"><span>🏙</span>${dashData.communaute_metropolitaine}</div>` : '',
     siteWeb ? `<div class="meta-badge"><a href="${siteWeb}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none"><span>🌐</span>Site officiel</a></div>` : '',
-    `<div class="meta-badge"><a href="#elus" style="color:inherit;text-decoration:none"><span>🤝</span>Voir les élus</a></div>`,
+    `<div class="meta-badge"><a href="#elus" onclick="scrollToElus(event)" style="color:inherit;text-decoration:none"><span>🤝</span>Voir les élus</a></div>`,
   ];
   document.getElementById('villeMeta').innerHTML = metas.join('');
 }
@@ -392,9 +392,12 @@ function afficherInterface() {
     <!-- Calculateur -->
     <div class="card">
       <div class="card-title"><span>🧮</span> Calculateur de taxes foncières</div>
-      <label class="calc-label" for="valMaison">Valeur foncière de votre propriété</label>
-      <input class="calc-input" type="number" id="valMaison" placeholder="ex: 500 000"
-             step="10000" oninput="calcTaxes()" value="500000">
+      <label class="calc-label" for="valMaison">Valeur foncière de votre propriété ($)</label>
+      <input class="calc-input" type="number" id="valMaison" placeholder="ex: 350 000"
+             step="10000" oninput="calcTaxes()" value="${d.eval_moy_residence ? Math.round(d.eval_moy_residence / 10000) * 10000 : 350000}">
+      <label class="calc-label" style="margin-top:.75rem" for="tgtuInput">Taux global (TGTU) $/100$</label>
+      <input class="calc-input" type="number" id="tgtuInput" placeholder="ex: 0.80"
+             step="0.01" min="0.01" max="5" oninput="calcTaxes()" value="${d.taux_global_taxation ? parseFloat(d.taux_global_taxation).toFixed(4) : '0.80'}">
       <div class="calc-result">
         <div class="calc-result-label">Taxes annuelles estimées</div>
         <div class="calc-result-value" id="calcTotal">—</div>
@@ -402,7 +405,7 @@ function afficherInterface() {
       </div>
       <div class="calc-breakdown" id="calcBreak"></div>
       <p style="font-size:.76rem;color:var(--gris);margin-top:.75rem;line-height:1.5">
-        TGTU de <strong>${formatTaux(d.taux_global_taxation)}</strong> (${d.annee_fiscale || anneeActive}).
+        ${d.taux_global_taxation ? `TGTU officiel : <strong>${formatTaux(d.taux_global_taxation)}</strong> (${d.annee_fiscale || anneeActive}).` : `TGTU non disponible pour ${d.annee_fiscale || anneeActive} — valeur modifiable ci-dessus.`}
         Des taxes d'agglomération et spéciales peuvent s'ajouter.
       </p>
     </div>
@@ -636,26 +639,27 @@ function renderElus() {
     </div>`).join('');
 }
 
-// ── Calculateur ────────────────────────────────────────────
-function calculerTaxes(valeur, tgtu) {
-  // tgtu est exprimé en $ par 100 $ d'évaluation (ex: 0.8232)
-  // On applique le taux sur la valeur foncière
-  return valeur * tgtu / 100;
+// ── Scroll vers élus ───────────────────────────────────────
+function scrollToElus(e) {
+  e.preventDefault();
+  const el = document.getElementById('elus');
+  if (!el) return;
+  const navH = document.querySelector('nav')?.offsetHeight || 60;
+  const top  = el.getBoundingClientRect().top + window.scrollY - navH - 16;
+  window.scrollTo({ top, behavior: 'smooth' });
 }
 
+// ── Calculateur ────────────────────────────────────────────
 function calcTaxes() {
-  const val    = parseFloat(document.getElementById('valMaison')?.value) || 0;
-  const tgtu   = parseFloat(dashData?.taux_global_taxation) || 0;
-  // Si taux pas encore disponible (ex: TGTU null), afficher message explicite
-  const et = document.getElementById('calcTotal');
-  const em = document.getElementById('calcMois');
+  const val  = parseFloat(document.getElementById('valMaison')?.value) || 0;
+  const tgtu = parseFloat(document.getElementById('tgtuInput')?.value) || 0;
+  const et   = document.getElementById('calcTotal');
+  const em   = document.getElementById('calcMois');
   if (!et) return;
 
-  if (!tgtu) {
+  if (!tgtu || !val) {
     et.textContent = '—';
-    em.textContent = '—';
-    const bd = document.getElementById('calcBreak');
-    if (bd) bd.innerHTML = '<p style="font-size:.8rem;color:rgba(255,255,255,.65);margin-top:.5rem">Le taux de taxation (TGTU) n\'est pas disponible pour cette municipalité.</p>';
+    if (em) em.textContent = '—';
     return;
   }
 
