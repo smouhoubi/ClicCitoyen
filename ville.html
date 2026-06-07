@@ -166,7 +166,18 @@ async function init() {
     const payload  = await fetchVille(code);
     villeData      = payload;
     dashData       = payload.dashboard || { ...DEMO_DASHBOARD };
-    elusData       = payload.elus      || [];
+    // Dédupliquer les élus : le JSON accumule plusieurs mandats historiques.
+    // On garde la première occurrence de chaque (nom + prénom), avec normalisation
+    // des accents pour éviter les doublons (ex: "Stéphane" vs "Stephane").
+    const rawElus = payload.elus || [];
+    const _seen = new Set();
+    const _norm = s => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    elusData = rawElus.filter(e => {
+      const key = `${_norm(e.nom)}|${_norm(e.prenom)}`;
+      if (_seen.has(key)) return false;
+      _seen.add(key);
+      return true;
+    });
     catsData       = payload.categories_depenses || [];
     if (dashData?.annee_fiscale) anneeActive = dashData.annee_fiscale;
   } catch {
@@ -447,7 +458,8 @@ function afficherInterface() {
           ${elusData.length === 0 ? 'Données des élus non disponibles pour cette municipalité.' : 'Chargement...'}
         </div>
       </div>
-      ${siteWeb ? `<a href="${siteWeb}" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:1rem;font-size:.84rem;color:var(--bleu-vif);text-decoration:none;font-weight:700">🌐 Site officiel de ${nomVille} →</a>` : ''}
+      ${elusData.length > 0 ? `<a href="elus.html?id=${codeGeo}" style="display:block;text-align:center;margin-top:1rem;font-size:.84rem;color:var(--bleu-vif);text-decoration:none;font-weight:700">🤝 Voir tous les élus de ${nomVille} →</a>` : ''}
+      ${siteWeb ? `<a href="${siteWeb}" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:.5rem;font-size:.84rem;color:var(--bleu-vif);text-decoration:none;font-weight:700">🌐 Site officiel de ${nomVille} →</a>` : ''}
     </div>
 
     <!-- CTA comparateur -->

@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="pageTitle">Élus — ClicCitoyen</title>
+<meta name="description" content="Liste des élus municipaux : maire, conseillers et membres du conseil.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Source+Sans+3:wght@300;400;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bleu:#0a1f44;--bleu-vif:#1d4ed8;--bleu-clair:#dbeafe;
+  --rouge:#c0392b;--vert:#059669;--orange:#d97706;
+  --creme:#f5f0e8;--beige:#e8e1d4;--texte:#1a1a2e;--gris:#6b7280;
+  --blanc:#ffffff;--ombre:0 4px 24px rgba(10,31,68,.12);
+  --radius:12px;--transition:.25s cubic-bezier(.4,0,.2,1)
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Source Sans 3',sans-serif;background:var(--creme);color:var(--texte);line-height:1.6}
+
+/* ── Navigation ── */
+nav{position:sticky;top:0;z-index:100;background:var(--bleu);display:flex;align-items:center;
+    justify-content:space-between;padding:0 2rem;height:60px;box-shadow:0 2px 16px rgba(0,0,0,.25)}
+.nav-logo{font-family:'Libre Baskerville',serif;font-size:1.1rem;color:white;text-decoration:none}
+.nav-logo span{color:#60a5fa}
+.nav-links{display:flex;gap:1.5rem;list-style:none}
+.nav-links a{color:rgba(255,255,255,.8);text-decoration:none;font-size:.88rem;font-weight:600;transition:color var(--transition)}
+.nav-links a:hover{color:#60a5fa}
+
+/* ── Hero ── */
+.hero{background:var(--bleu);padding:2.5rem 2rem;color:white}
+.hero-inner{max-width:1000px;margin:0 auto}
+.breadcrumb{font-size:.8rem;color:rgba(255,255,255,.5);margin-bottom:.5rem}
+.breadcrumb a{color:#60a5fa;text-decoration:none}
+.breadcrumb a:hover{text-decoration:underline}
+.hero-title{font-family:'Libre Baskerville',serif;font-size:clamp(1.6rem,4vw,2.4rem);font-weight:700;line-height:1.2}
+.hero-sub{color:rgba(255,255,255,.65);font-size:1rem;margin-top:.4rem}
+.hero-badges{display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1rem}
+.badge{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);
+       padding:.3rem .85rem;border-radius:999px;font-size:.8rem;font-weight:600}
+
+/* ── Layout ── */
+.page-content{max-width:1000px;margin:0 auto;padding:2rem}
+
+/* ── Card ── */
+.card{background:white;border-radius:var(--radius);padding:1.75rem;
+      box-shadow:var(--ombre);border:1px solid var(--beige);margin-bottom:1.5rem}
+.card-title{font-family:'Libre Baskerville',serif;font-size:1.05rem;color:var(--bleu);
+            margin-bottom:1.25rem;display:flex;align-items:center;gap:.5rem}
+
+/* ── Filtre / Recherche ── */
+.toolbar{display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1.5rem;align-items:center}
+.search-wrap{flex:1;min-width:200px;position:relative}
+.search-icon{position:absolute;left:.85rem;top:50%;transform:translateY(-50%);color:var(--gris);font-size:1rem;pointer-events:none}
+#searchInput{width:100%;padding:.6rem .85rem .6rem 2.4rem;border:1.5px solid var(--beige);
+             border-radius:8px;font-family:inherit;font-size:.9rem;color:var(--texte);
+             background:var(--creme);outline:none;transition:border-color var(--transition)}
+#searchInput:focus{border-color:var(--bleu-vif)}
+.filter-wrap{display:flex;gap:.5rem;flex-wrap:wrap}
+.filter-btn{padding:.45rem .9rem;border:1.5px solid var(--beige);border-radius:999px;
+            font-family:inherit;font-size:.8rem;font-weight:600;color:var(--gris);
+            background:white;cursor:pointer;transition:all var(--transition)}
+.filter-btn:hover{border-color:var(--bleu-vif);color:var(--bleu-vif)}
+.filter-btn.active{background:var(--bleu-vif);border-color:var(--bleu-vif);color:white}
+
+/* ── Grille élus ── */
+.elus-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem}
+@media(max-width:600px){.elus-grid{grid-template-columns:1fr}}
+
+/* ── Carte élu ── */
+.elu-card{display:flex;align-items:flex-start;gap:.9rem;padding:1rem 1.1rem;
+          border-radius:10px;background:var(--creme);border:1px solid var(--beige);
+          transition:transform var(--transition),box-shadow var(--transition)}
+.elu-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(10,31,68,.1)}
+.elu-card.maire{background:var(--bleu-clair);border-color:#93c5fd}
+
+.elu-avatar{width:46px;height:46px;border-radius:50%;background:var(--bleu);
+            display:flex;align-items:center;justify-content:center;
+            font-size:1.15rem;flex-shrink:0;color:white;font-weight:700;
+            font-family:'DM Mono',monospace}
+.elu-card.maire .elu-avatar{background:var(--bleu-vif)}
+
+.elu-info{flex:1;min-width:0}
+.elu-nom{font-weight:700;font-size:.92rem;color:var(--bleu);line-height:1.3}
+.elu-poste{font-size:.78rem;color:var(--gris);margin-top:.15rem;line-height:1.4;
+           text-transform:capitalize}
+.elu-district{display:inline-block;margin-top:.4rem;font-size:.73rem;
+              color:var(--bleu-vif);font-weight:600;background:rgba(29,78,216,.08);
+              padding:.15rem .5rem;border-radius:4px}
+.elu-card.maire .elu-district{color:var(--bleu);background:rgba(10,31,68,.08)}
+
+/* ── Badge poste spécial ── */
+.poste-badge{display:inline-block;font-size:.68rem;font-weight:700;letter-spacing:.04em;
+             text-transform:uppercase;padding:.1rem .5rem;border-radius:4px;margin-bottom:.2rem}
+.badge-maire{background:var(--bleu);color:white}
+.badge-exec{background:#f0fdf4;color:#065f46;border:1px solid #6ee7b7}
+.badge-president{background:#fff7ed;color:#9a3412;border:1px solid #fdba74}
+
+/* ── Vide / Erreur ── */
+.empty-state{text-align:center;padding:3rem 2rem;color:var(--gris)}
+.empty-state .icon{font-size:2.5rem;margin-bottom:.75rem}
+.empty-state p{font-size:.95rem}
+
+/* ── Compteur ── */
+.result-count{font-size:.82rem;color:var(--gris);margin-bottom:1rem;font-weight:600}
+.result-count strong{color:var(--bleu)}
+
+/* ── Spinner ── */
+.spinner-wrap{text-align:center;padding:3rem}
+.spinner{width:32px;height:32px;border-radius:50%;border:3px solid var(--beige);
+         border-top-color:var(--bleu-vif);animation:spin .8s linear infinite;margin:0 auto 1rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Bouton retour ── */
+.btn-back{display:inline-flex;align-items:center;gap:.5rem;padding:.6rem 1.25rem;
+          background:var(--bleu-vif);color:white;border-radius:8px;text-decoration:none;
+          font-weight:700;font-size:.88rem;transition:background var(--transition)}
+.btn-back:hover{background:#1e40af}
+
+/* ── Mobile nav ── */
+@media(max-width:640px){
+  .nav-links{display:none}
+  nav{padding:0 1rem}
+  .page-content{padding:1rem}
+  .hero{padding:1.5rem 1rem}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="index.html">Clic<span>Citoyen</span></a>
+  <ul class="nav-links">
+    <li><a href="index.html">Municipalités</a></li>
+    <li><a href="comparateur.html">Comparateur</a></li>
+  </ul>
+</nav>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="breadcrumb">
+      <a href="index.html">Accueil</a> ›
+      <span id="breadcrumbVille">Ville</span> ›
+      <span>Élus</span>
+    </div>
+    <div class="hero-title" id="heroTitle">🤝 Représentants municipaux</div>
+    <div class="hero-sub" id="heroSub">Chargement…</div>
+    <div class="hero-badges" id="heroBadges"></div>
+  </div>
+</div>
+
+<!-- Contenu principal -->
+<div class="page-content">
+
+  <div class="card" id="mainCard">
+    <div class="spinner-wrap" id="loadingState">
+      <div class="spinner"></div>
+      <p style="color:var(--gris);font-size:.9rem">Chargement des élus…</p>
+    </div>
+
+    <div id="elusContent" style="display:none">
+      <!-- Barre d'outils -->
+      <div class="toolbar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" placeholder="Rechercher un nom, poste ou district…" oninput="filtrerElus()">
+        </div>
+        <div class="filter-wrap" id="filterBtns">
+          <button class="filter-btn active" onclick="setFiltre('tous',this)">Tous</button>
+          <button class="filter-btn" onclick="setFiltre('maire',this)">Maire</button>
+          <button class="filter-btn" onclick="setFiltre('executif',this)">Comité exécutif</button>
+          <button class="filter-btn" onclick="setFiltre('conseiller',this)">Conseillers</button>
+        </div>
+      </div>
+
+      <div class="result-count" id="resultCount"></div>
+
+      <div class="elus-grid" id="elusGrid"></div>
+
+      <div class="empty-state" id="noResults" style="display:none">
+        <div class="icon">🔎</div>
+        <p>Aucun élu ne correspond à votre recherche.</p>
+      </div>
+    </div>
+
+    <div id="errorState" style="display:none;text-align:center;padding:2.5rem">
+      <div style="font-size:2.5rem;margin-bottom:.75rem">📭</div>
+      <p style="color:var(--gris);margin-bottom:1.5rem">Données des élus non disponibles pour cette municipalité.</p>
+    </div>
+  </div>
+
+  <!-- Retour ville -->
+  <div id="backWrap" style="display:none;margin-top:.5rem">
+    <a id="backLink" class="btn-back" href="#">← Retour au tableau de bord</a>
+  </div>
+
+</div>
+
+<script src="js/data-client.js"></script>
+<script>
+// ── État global ──────────────────────────────────────────────────────
+let allElus   = [];
+let filtreActif = 'tous';
+
+// ── Initialisation ───────────────────────────────────────────────────
+async function init() {
+  const code = getUrlParam('id');
+  if (!code) { window.location.href = 'index.html'; return; }
+
+  // Lien retour vers ville.html
+  const back = document.getElementById('backLink');
+  back.href = `ville.html?id=${code}`;
+  document.getElementById('backWrap').style.display = 'block';
+
+  try {
+    const payload = await fetchVille(code);
+
+    const nom   = payload.nom || payload.dashboard?.nom || code;
+    const annee = payload.annee || payload.dashboard?.annee_fiscale || '';
+
+    // Mettre à jour le hero
+    document.getElementById('pageTitle').textContent    = `Élus — ${nom} — ClicCitoyen`;
+    document.getElementById('heroTitle').textContent    = `🤝 Représentants de ${nom}`;
+    document.getElementById('heroSub').textContent      = annee ? `Données ${annee}` : 'Conseil municipal';
+    document.getElementById('breadcrumbVille').textContent = nom;
+
+    // Dédupliquer : garder la première occurrence de chaque (nom + prenom)
+    // Les données contiennent plusieurs mandats historiques ; on garde le mandat
+    // le plus récent (qui apparaît en premier dans le tableau).
+    const raw = payload.elus || [];
+    const seen = new Set();
+    allElus = raw.filter(e => {
+      // Normaliser les accents pour éviter les doublons (ex: "Stéphane" vs "Stephane")
+      const norm = s => (s || '').toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const key = `${norm(e.nom)}|${norm(e.prenom)}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    // Badges hero
+    const nb      = allElus.length;
+    const nbMaire = allElus.filter(e => isMaire(e)).length;
+    const nbConseil = nb - nbMaire;
+    const badgesEl = document.getElementById('heroBadges');
+    badgesEl.innerHTML = `
+      <div class="badge">🏛 ${nb} élu${nb > 1 ? 's' : ''}</div>
+      ${nbMaire  ? `<div class="badge">👑 ${nbMaire} maire${nbMaire > 1 ? 's' : ''}</div>` : ''}
+      ${nbConseil ? `<div class="badge">🗳 ${nbConseil} conseiller${nbConseil > 1 ? 's' : ''}</div>` : ''}
+    `;
+
+    if (allElus.length === 0) {
+      document.getElementById('loadingState').style.display  = 'none';
+      document.getElementById('errorState').style.display    = 'block';
+      return;
+    }
+
+    document.getElementById('loadingState').style.display  = 'none';
+    document.getElementById('elusContent').style.display   = 'block';
+    afficherElus(allElus);
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('errorState').style.display   = 'block';
+  }
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────
+function isMaire(e) {
+  return /\bmaire\b/i.test(e.poste || '');
+}
+function isExecutif(e) {
+  return /comit[eé]\s+ex[eé]cutif/i.test(e.poste || '');
+}
+function isPresident(e) {
+  return /pr[eé]sident/i.test(e.poste || '');
+}
+
+function initiales(e) {
+  const p = (e.prenom || ' ').charAt(0).toUpperCase();
+  const n = (e.nom    || ' ').charAt(0).toUpperCase();
+  return `${p}${n}`;
+}
+
+function postes(e) {
+  const badges = [];
+  if (isMaire(e))     badges.push('<span class="poste-badge badge-maire">Maire</span>');
+  else if (isPresident(e)) badges.push('<span class="poste-badge badge-president">Président·e</span>');
+  else if (isExecutif(e))  badges.push('<span class="poste-badge badge-exec">Comité exécutif</span>');
+  return badges.join(' ');
+}
+
+// ── Rendu ─────────────────────────────────────────────────────────────
+function afficherElus(liste) {
+  const grid      = document.getElementById('elusGrid');
+  const noResults = document.getElementById('noResults');
+  const countEl   = document.getElementById('resultCount');
+
+  if (!liste.length) {
+    grid.innerHTML = '';
+    noResults.style.display = 'block';
+    countEl.innerHTML = '';
+    return;
+  }
+
+  noResults.style.display = 'none';
+  countEl.innerHTML = `<strong>${liste.length}</strong> élu${liste.length > 1 ? 's' : ''} affiché${liste.length > 1 ? 's' : ''}`;
+
+  grid.innerHTML = liste.map(e => `
+    <div class="elu-card ${isMaire(e) ? 'maire' : ''}">
+      <div class="elu-avatar">${initiales(e)}</div>
+      <div class="elu-info">
+        ${postes(e)}
+        <div class="elu-nom">${(e.prenom || '')} ${(e.nom || '')}</div>
+        <div class="elu-poste">${capitaliser(e.poste || '')}</div>
+        ${e.district ? `<span class="elu-district">📍 ${e.district}</span>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function capitaliser(str) {
+  if (!str) return '';
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+// ── Filtres ──────────────────────────────────────────────────────────
+function setFiltre(filtre, btn) {
+  filtreActif = filtre;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filtrerElus();
+}
+
+function filtrerElus() {
+  const q = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+
+  let liste = allElus.filter(e => {
+    // Filtre catégorie
+    if (filtreActif === 'maire')      return isMaire(e);
+    if (filtreActif === 'executif')   return isExecutif(e) && !isMaire(e);
+    if (filtreActif === 'conseiller') return !isMaire(e) && !isExecutif(e);
+    return true;
+  });
+
+  // Filtre texte
+  if (q) {
+    liste = liste.filter(e =>
+      (`${e.prenom} ${e.nom}`).toLowerCase().includes(q) ||
+      (e.poste || '').toLowerCase().includes(q) ||
+      (e.district || '').toLowerCase().includes(q)
+    );
+  }
+
+  afficherElus(liste);
+}
+
+// ── Lancement ────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
