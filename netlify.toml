@@ -15,5 +15,5 @@
 [[notifications.email]]
   event = "forms/submission"
   form = "contact"
-  to = "smouhoubi2@gmail.com"
+  to = "cliccitoyenqc@gmail.com"
   subject = "ClicCitoyen — Nouveau message de contact"
