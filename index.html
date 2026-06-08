@@ -374,6 +374,13 @@ function afficherVilles(data) {
 }
 
 // ── Formulaire Netlify ────────────────────────────────────
+function showFeedback(fb, type, msg) {
+  fb.className = 'form-feedback ' + type;
+  fb.textContent = msg;
+  fb.style.display = 'block';
+  fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
 document.getElementById('contactForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   const btn = document.getElementById('btnEnvoyer');
@@ -381,37 +388,43 @@ document.getElementById('contactForm').addEventListener('submit', async function
   const nom    = document.getElementById('contactNom').value.trim();
   const email  = document.getElementById('contactEmail').value.trim();
   const msg    = document.getElementById('contactMessage').value.trim();
+
+  // Validation
   if (!nom || !email || !msg) {
-    fb.className = 'form-feedback error';
-    fb.textContent = '⚠ Veuillez remplir tous les champs.';
+    showFeedback(fb, 'error', '⚠ Veuillez remplir tous les champs obligatoires.');
     return;
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    fb.className = 'form-feedback error';
-    fb.textContent = '⚠ Courriel invalide.';
+    showFeedback(fb, 'error', '⚠ Adresse courriel invalide.');
     return;
   }
+
   btn.disabled = true;
-  btn.innerHTML = '<span>⏳</span> Envoi...';
+  btn.innerHTML = '<span>⏳</span> Envoi en cours...';
   fb.style.display = 'none';
+
   try {
-    const r = await fetch('/', {
+    // Utilise l'URL courante (compatible Netlify et GitHub Pages)
+    const formUrl = window.location.pathname.endsWith('/')
+      ? window.location.pathname
+      : window.location.pathname.replace(/\/[^/]*$/, '/') || '/';
+
+    const r = await fetch(formUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams(new FormData(this)).toString(),
     });
     if (r.ok) {
-      fb.className = 'form-feedback success';
-      fb.textContent = '✅ Message envoyé ! Réponse sous 48 h.';
+      showFeedback(fb, 'success', '✅ Message envoyé ! Vous recevrez une réponse dans les 48 h.');
       this.reset();
-    } else throw new Error();
-  } catch {
-    fb.className = 'form-feedback error';
-    fb.textContent = '⚠ Erreur d\'envoi. Veuillez réessayer.';
+    } else {
+      throw new Error('HTTP ' + r.status);
+    }
+  } catch (err) {
+    showFeedback(fb, 'error', '⚠ Erreur d\'envoi (' + (err.message || 'réseau') + '). Veuillez réessayer ou écrire à cliccitoyenqc@gmail.com.');
   } finally {
     btn.disabled = false;
     btn.innerHTML = '<span>✉️</span> Envoyer le message';
-    fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 });
 
