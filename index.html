@@ -191,11 +191,9 @@ footer a{color:#60a5fa;text-decoration:none}
     <h2 class="section-title">Nous écrire</h2>
     <p class="section-sub">Une question, une erreur à signaler ou une suggestion ? On vous répond sous 48 h.</p>
     <div id="formFeedback" class="form-feedback"></div>
-    <form class="contact-form" id="contactForm" name="contact" method="POST"
-          data-netlify="true" netlify-honeypot="bot-field" novalidate style="display:grid;gap:1.25rem">
-      <input type="hidden" name="form-name" value="contact">
-      <input type="hidden" name="_to" value="cliccitoyenqc@gmail.com">
-      <p style="display:none"><input name="bot-field"></p>
+    <form class="contact-form" id="contactForm" novalidate style="display:grid;gap:1.25rem">
+      <!-- Formspree honeypot anti-spam -->
+      <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off">
       <div class="form-row">
         <div class="form-group">
           <label class="form-label" for="contactNom">Votre nom *</label>
@@ -373,7 +371,7 @@ function afficherVilles(data) {
     </div>`).join('');
 }
 
-// ── Formulaire Netlify ────────────────────────────────────
+// ── Formulaire  ────────────────────────────────────
 function showFeedback(fb, type, msg) {
   fb.className = 'form-feedback ' + type;
   fb.textContent = msg;
@@ -404,15 +402,13 @@ document.getElementById('contactForm').addEventListener('submit', async function
   fb.style.display = 'none';
 
   try {
-    // Utilise l'URL courante (compatible Netlify et GitHub Pages)
-    const formUrl = window.location.pathname.endsWith('/')
-      ? window.location.pathname
-      : window.location.pathname.replace(/\/[^/]*$/, '/') || '/';
+    // Formspree — remplacer VOTRE_ID par l'ID obtenu sur formspree.io/f/VOTRE_ID
+    const FORMSPREE_ENDPOINT = 'https://formspree.io/f/58b0a6853006497daf9475d48d8954e9';
 
-    const r = await fetch(formUrl, {
+    const r = await fetch(FORMSPREE_ENDPOINT, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams(new FormData(this)).toString(),
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ nom, email, message: msg }),
     });
     if (r.ok) {
       showFeedback(fb, 'success', '✅ Message envoyé ! Vous recevrez une réponse dans les 48 h.');
