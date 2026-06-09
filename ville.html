@@ -321,8 +321,10 @@ function formatIndice(val) {
 function afficherInterface() {
   const d           = dashData;
   const pop         = d.population || 1;
-  const detteParHab = pop > 0 ? (d.dette_nette_lt || 0) / pop : null;
-  const chargesParHab = pop > 0 ? (d.charges_totales || 0) / pop : null;
+  const detteParHab = d.dette_nette_habitant != null ? d.dette_nette_habitant
+                      : (pop > 0 && d.dette_nette_lt != null ? d.dette_nette_lt / pop : null);
+  const chargesParHab = d.charges_par_habitant != null ? d.charges_par_habitant
+                        : (pop > 0 && d.charges_totales != null ? d.charges_totales / pop : null);
   const refProv     = refData['PROV_QUEBEC'] || {};
   const tgtuClasse  = d.taux_global_taxation && refProv.tgtu_ref
     ? (d.taux_global_taxation < refProv.tgtu_ref * 0.9 ? 'good'
@@ -345,15 +347,15 @@ function afficherInterface() {
         <div class="kpi-value">${formatCAD(d.charges_totales)}</div>
         <div class="kpi-note">${formatCAD(chargesParHab, 0)} / habitant</div>
       </div>
-      <div class="kpi-card ${(d.excedent_fonctionnement || 0) >= 0 ? 'good' : 'bad'}">
+      <div class="kpi-card ${(d.excedent_accumule ?? d.excedent_fonctionnement ?? 0) >= 0 ? 'good' : 'bad'}">
         <div class="kpi-label">Excédent accumulé</div>
-        <div class="kpi-value">${formatCAD(d.excedent_fonctionnement)}</div>
-        <div class="kpi-note">${(d.excedent_fonctionnement || 0) >= 0 ? '✓ Bilan positif' : '⚠ Déficit'}</div>
+        <div class="kpi-value">${formatCAD(d.excedent_accumule ?? d.excedent_fonctionnement)}</div>
+        <div class="kpi-note">${(d.excedent_accumule ?? d.excedent_fonctionnement ?? 0) >= 0 ? '✓ Bilan positif' : '⚠ Déficit'}</div>
       </div>
-      <div class="kpi-card ${detteParHab < 4000 ? 'good' : detteParHab < 8000 ? 'warn' : 'bad'}">
+      <div class="kpi-card ${detteParHab == null ? '' : detteParHab < 4000 ? 'good' : detteParHab < 8000 ? 'warn' : 'bad'}">
         <div class="kpi-label">Dette nette / habitant</div>
-        <div class="kpi-value">${formatCAD(detteParHab, 0)}</div>
-        <div class="kpi-note">Total : ${formatCAD(d.dette_nette_lt)}</div>
+        <div class="kpi-value">${detteParHab != null ? formatCAD(detteParHab, 0) : '—'}</div>
+        <div class="kpi-note">Total : ${formatCAD(d.dette_nette_lt ?? (detteParHab != null ? detteParHab * pop : null))}</div>
       </div>
       <div class="kpi-card ${d.charge_fiscale_logement < (refProv.charge_fisc_log_ref || 9999) ? 'good' : 'warn'}">
         <div class="kpi-label">Charge fiscale / logement</div>
@@ -523,25 +525,58 @@ function renderRevDep() {
   const ctx = document.getElementById('cRevDep')?.getContext('2d');
   if (!ctx || _chartsRendered.revdep) return;
   _chartsRendered.revdep = true;
-  const annees = [...new Set([...(histData.CHARGE_TOTAL || []).map(r => r.annee)])].sort();
+
+  // Rassembler toutes les années disponibles depuis l'historique OU le dashboard
+  const anneesHist = [...new Set([...(histData.CHARGE_TOTAL || []).map(r => r.annee)])].sort();
+
+  // Si l'historique n'a pas CHARGE_TOTAL mais que dashData en a, construire depuis dashData
+  const anneeDash = dashData?.annee_fiscale || anneeActive;
+  const chargesDash  = dashData?.charges_totales;
+  const revenusDash  = dashData?.revenus_totaux;
+  const excedDash    = dashData?.excedent_accumule ?? dashData?.excedent_fonctionnement;
+
+  // Fusionner : données historiques + année courante depuis dashboard
+  const anneesSet = new Set(anneesHist);
+  if (chargesDash != null || revenusDash != null) anneesSet.add(anneeDash);
+  const annees = [...anneesSet].sort();
+
   if (!annees.length) {
     ctx.canvas.parentElement.innerHTML = '<p style="text-align:center;color:var(--gris);padding:2rem">Données insuffisantes</p>';
     return;
   }
+
+  function getCharges(a) {
+    const hist = histData.CHARGE_TOTAL?.find(r => r.annee === a)?.valeur;
+    if (hist != null) return hist;
+    if (a === anneeDash && chargesDash != null) return chargesDash;
+    return 0;
+  }
+
+  function getRevenus(a) {
+    const hist = histData.REV_TOTAL?.find(r => r.annee === a)?.valeur;
+    if (hist != null) return hist;
+    // Fallback : revenus = charges + excédent (si disponibles)
+    if (a === anneeDash) {
+      if (revenusDash != null) return revenusDash;
+      const ch = getCharges(a);
+      const ex = excedDash ?? 0;
+      return ch + Math.max(ex, 0);
+    }
+    const ch = getCharges(a);
+    const ex = (histData.EXCED_FONCT?.find(r => r.annee === a)?.valeur || 0);
+    return ch + Math.max(ex, 0);
+  }
+
   new Chart(ctx, {
     type: 'bar',
     data: {
       labels: annees,
       datasets: [
         { label: 'Revenus (M$)',
-          data: annees.map(a => {
-            const ch = (histData.CHARGE_TOTAL?.find(r => r.annee === a)?.valeur || 0);
-            const ex = (histData.EXCED_FONCT?.find(r => r.annee === a)?.valeur || 0);
-            return +((ch + Math.max(ex, 0)) / 1e6).toFixed(1);
-          }),
+          data: annees.map(a => +(getRevenus(a) / 1e6).toFixed(1)),
           backgroundColor: COULEUR_VILLE + 'bb', borderRadius: 6 },
         { label: 'Charges (M$)',
-          data: annees.map(a => +((histData.CHARGE_TOTAL?.find(r => r.annee === a)?.valeur || 0) / 1e6).toFixed(1)),
+          data: annees.map(a => +(getCharges(a) / 1e6).toFixed(1)),
           backgroundColor: COULEUR_CLASSE + 'bb', borderRadius: 6 }
       ]
     },
@@ -571,7 +606,7 @@ function renderFiche() {
     { label: 'Charge fiscale / logement',  val: formatCAD(d.charge_fiscale_logement, 0),                                               num: d.charge_fiscale_logement, ref: refProv.charge_fisc_log_ref,  lower: true },
     { label: 'Indice effort fiscal',       val: d.indice_effort_fiscal ? Math.round(d.indice_effort_fiscal) + ' / 100' : '—',           num: d.indice_effort_fiscal,    ref: 100,                          lower: true },
     { label: 'Revenus totaux',             val: formatCAD(d.revenus_totaux),     num: null, ref: null },
-    { label: 'Excédent de fonctionnement', val: formatCAD(d.excedent_fonctionnement), num: null, ref: null },
+    { label: 'Excédent accumulé',           val: formatCAD(d.excedent_accumule ?? d.excedent_fonctionnement), num: null, ref: null },
     { label: 'Richesse foncière (RFU)',    val: formatCAD(d.richesse_fonciere),  num: null, ref: null },
     { label: 'Éval. moy. résidence 1 log.',val: d.eval_moy_residence ? formatCAD(d.eval_moy_residence, 0) : '—', num: null, ref: null },
   ];
@@ -752,12 +787,14 @@ async function changerAnnee() {
       CHARGE_TOTAL:     'charges_totales',
       ENDET_NET_LT:     'dette_nette_lt',
       EXCED_FONCT:      'excedent_fonctionnement',
+      EXCED_ACCUMULE:   'excedent_accumule',
       CHARGE_FISC_LOG:  'charge_fiscale_logement',
       IDX_EFFORT_FISCAL:'indice_effort_fiscal',
       CHARGE_NETTE_RFU: 'charge_nette_rfu',
       ENDET_RFU:        'endettement_rfu',
       REV_TOTAL:        'revenus_totaux',
       RFU:              'richesse_fonciere',
+      DETTE_NET_HAB:    'dette_nette_habitant',
     };
     Object.entries(MAP).forEach(([ind, field]) => {
       const row = h[ind]?.find(r => r.annee === anneeActive);
