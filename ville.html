@@ -473,9 +473,8 @@ function afficherInterface() {
     </div>
   </div>`;
 
-  renderTend();
-  renderRevDep();
-  renderFiche();
+  renderTend();   // seul onglet visible au départ
+  // renderRevDep et renderFiche sont appelés à la demande dans switchTab
   renderComp();
   renderElus();
   calcTaxes();
@@ -485,25 +484,55 @@ function afficherInterface() {
 function renderTend() {
   const ctx = document.getElementById('cTend')?.getContext('2d');
   if (!ctx || _chartsRendered.tend) return;
-  _chartsRendered.tend = true;
-  const annees = [...new Set(Object.values(histData).flatMap(a => a.map(r => r.annee)))].sort();
+
+  const anneeDash = dashData?.annee_fiscale || anneeActive;
+
+  // Récupère valeur depuis histData, sinon depuis dashData pour l'année courante
+  function getVal(ind, dashField, a, scale) {
+    const v = histData[ind]?.find(r => r.annee === a)?.valeur;
+    if (v != null) return scale ? v / scale : v;
+    if (a === anneeDash && dashData?.[dashField] != null) {
+      return scale ? dashData[dashField] / scale : dashData[dashField];
+    }
+    return null;
+  }
+
+  // Rassembler les années depuis l'historique + année courante du dashboard
+  const anneesSet = new Set(Object.values(histData).flatMap(a => a.map(r => r.annee)));
+  if (dashData?.taux_global_taxation != null || dashData?.charges_totales != null) {
+    anneesSet.add(anneeDash);
+  }
+  const annees = [...anneesSet].sort();
+
   if (!annees.length) {
     ctx.canvas.parentElement.innerHTML = '<p style="text-align:center;color:var(--gris);padding:2rem">Données historiques insuffisantes</p>';
     return;
   }
-  const getVals = (ind) => annees.map(a => histData[ind]?.find(r => r.annee === a)?.valeur ?? null);
+
+  // Calculer les valeurs AVANT de vérifier s'il y a des données
+  const tgtuVals   = annees.map(a => getVal('TGTU',         'taux_global_taxation', a, null));
+  const chargeVals = annees.map(a => getVal('CHARGE_TOTAL', 'charges_totales',       a, 1e6));
+  const excedVals  = annees.map(a => getVal('EXCED_FONCT',  'excedent_accumule',     a, 1e6));
+  const hasData = [...tgtuVals, ...chargeVals, ...excedVals].some(v => v != null);
+
+  if (!hasData) {
+    ctx.canvas.parentElement.innerHTML = '<p style="text-align:center;color:var(--gris);padding:2rem">Données historiques insuffisantes pour cette municipalité</p>';
+    return;
+  }
+
+  _chartsRendered.tend = true;
   new Chart(ctx, {
     type: 'line',
     data: {
       labels: annees,
       datasets: [
-        { label: 'TGTU ($/100$)', data: getVals('TGTU'),
+        { label: 'TGTU ($/100$)',          data: tgtuVals,
           borderColor: COULEUR_VILLE, backgroundColor: COULEUR_VILLE + '22',
           yAxisID: 'yTaux', tension: .4, fill: true, borderWidth: 2.5, pointRadius: 5 },
-        { label: 'Charges totales (M$)', data: getVals('CHARGE_TOTAL').map(v => v ? v / 1e6 : null),
+        { label: 'Charges totales (M$)',   data: chargeVals,
           borderColor: COULEUR_CLASSE, backgroundColor: 'transparent',
           yAxisID: 'yCharges', tension: .4, borderWidth: 2.5, borderDash: [5, 4], pointRadius: 5 },
-        { label: 'Excédent (M$)', data: getVals('EXCED_FONCT').map(v => v ? v / 1e6 : null),
+        { label: 'Excédent accumulé (M$)', data: excedVals,
           borderColor: COULEUR_PROV, backgroundColor: 'transparent',
           yAxisID: 'yCharges', tension: .4, borderWidth: 2, pointRadius: 4 },
       ]
@@ -524,7 +553,7 @@ function renderTend() {
 function renderRevDep() {
   const ctx = document.getElementById('cRevDep')?.getContext('2d');
   if (!ctx || _chartsRendered.revdep) return;
-  _chartsRendered.revdep = true;
+  // NOTE: _chartsRendered.revdep est mis à true APRÈS vérification des données
 
   // Rassembler toutes les années disponibles depuis l'historique OU le dashboard
   const anneesHist = [...new Set([...(histData.CHARGE_TOTAL || []).map(r => r.annee)])].sort();
@@ -544,6 +573,8 @@ function renderRevDep() {
     ctx.canvas.parentElement.innerHTML = '<p style="text-align:center;color:var(--gris);padding:2rem">Données insuffisantes</p>';
     return;
   }
+
+  _chartsRendered.revdep = true;
 
   function getCharges(a) {
     const hist = histData.CHARGE_TOTAL?.find(r => r.annee === a)?.valeur;
@@ -773,6 +804,7 @@ function switchTab(el, id) {
   });
   if (id === 'tTend')   renderTend();
   if (id === 'tRevDep') renderRevDep();
+  if (id === 'tFiche')  renderFiche();
 }
 
 // ── Changement d'année ─────────────────────────────────────
